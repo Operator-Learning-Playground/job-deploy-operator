@@ -24,13 +24,16 @@ type JobFlowSpec struct {
 }
 
 type Flow struct {
+	// job name, namespace 就是默认 namespace
 	Name string `json:"name"`
-	// cd
-	JobTemplate  v1.JobSpec `json:"jobTemplate"`
-	Dependencies []string   `json:"dependencies"`
+	// 用于赋值
+	JobTemplate v1.JobSpec `json:"jobTemplate"`
+	// 依赖项
+	Dependencies []string `json:"dependencies"`
 }
 
 type JobFlowStatus struct {
+	// 用于存储 map 是 name/namespace 的方式 或是只要 name就行
 	JobStatusList map[string]v1.JobStatus `json:"jobStatusList,omitempty"`
 }
 
