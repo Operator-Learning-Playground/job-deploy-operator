@@ -1,0 +1,63 @@
+apiVersion: example.com/v1
+kind: JobFlow
+metadata:
+  name: my-sequential-job
+spec:
+  flows:
+    - name: job1
+      jobTemplate:
+        containers:
+          - image: nginx:1.14.2
+            command:
+              - sh
+              - -c
+              - sleep 10s
+            imagePullPolicy: IfNotPresent
+            name: nginx
+            resources:
+              requests:
+                cpu: "1"
+        restartPolicy: OnFailure
+      dependencies: []
+
+      # 其他 Job1 相关字段
+      # ...
+    - name: job2
+      jobTemplate:
+        containers:
+          - image: nginx:1.14.2
+            command:
+              - sh
+              - -c
+              - sleep 10s
+            imagePullPolicy: IfNotPresent
+            name: nginx
+            resources:
+              requests:
+                cpu: "1"
+        restartPolicy: OnFailure
+      dependencies:
+        - job1
+      # 其他 Job2 相关字段
+      # ...
+    - name: job3
+      jobTemplate:
+        containers:
+          - image: nginx:1.14.2
+            command:
+              - sh
+              - -c
+              - sleep 10s
+            imagePullPolicy: IfNotPresent
+            name: nginx
+            resources:
+              requests:
+                cpu: "1"
+        restartPolicy: OnFailure
+      dependencies:
+        - job1
+        - job2
+      # 其他 Job3 相关字段
+      # ...
+#  hasDependencies: true
+    

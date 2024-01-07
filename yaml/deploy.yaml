@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myclusterconfig-controller
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: myclusterconfig-controller
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: myclusterconfig-controller
+    spec:
+      nodeName: vm-0-16-centos # 只调度到这个节点上
+      serviceAccountName: myclusterconfig-sa # 配置service account
+      containers:
+        - name: myclusterconfig # 控制器镜像
+          image: clusterconfigoperator:v1
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: "Release"
+              value: "1"
+          workingDir: "/app"
+          command: ["./myclusterconfigoperator"]
+          ports:
+            - containerPort: 80
+
