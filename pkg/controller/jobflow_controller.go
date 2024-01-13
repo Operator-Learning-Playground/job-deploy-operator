@@ -22,11 +22,12 @@ type JobFlowController struct {
 	log      logr.Logger
 }
 
-func NewJobFlowController(client client.Client, log logr.Logger, scheme *runtime.Scheme) *JobFlowController {
+func NewJobFlowController(client client.Client, log logr.Logger, scheme *runtime.Scheme, recorder record.EventRecorder) *JobFlowController {
 	return &JobFlowController{
-		client: client,
-		log:    log,
-		Scheme: scheme,
+		client:   client,
+		log:      log,
+		Recorder: recorder,
+		Scheme:   scheme,
 	}
 }
 
@@ -34,7 +35,6 @@ func NewJobFlowController(client client.Client, log logr.Logger, scheme *runtime
 func (r *JobFlowController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 
 	klog.Info("start jobFlow Reconcile..........")
-	klog.Info(fmt.Sprintf("req.%v", req))
 
 	// load JobFlow by namespace
 	jobFlow := &jobflowv1alpha1.JobFlow{}
@@ -51,9 +51,26 @@ func (r *JobFlowController) Reconcile(ctx context.Context, req reconcile.Request
 		return reconcile.Result{}, err
 	}
 
-	// 启动 依序启动 job 任务
+	if jobFlow.Status.State == jobflowv1alpha1.Succeed {
+		return reconcile.Result{}, nil
+	}
 
-	// 改变 job 状态
+	// FIXME: 处理 Finalizer 字段
+	// 考虑是否要在 jobflow status state 为 Running 时 不能删除？
+
+	// deploy job by dependence order.
+	if err = r.deployJobFlow(ctx, *jobFlow); err != nil {
+		klog.Error("deployJob error: ", err)
+		return reconcile.Result{}, err
+	}
+
+	// update status
+	// 修改 job 狀態，list 出所有相關的 job ，並查看其狀態，並存在 status 中
+	if err = r.updateJobFlowStatus(ctx, jobFlow); err != nil {
+		klog.Error("update jobFlow status error: ", err)
+		return reconcile.Result{}, err
+	}
+	klog.Info("end jobFlow Reconcile........")
 
 	return reconcile.Result{}, nil
 }

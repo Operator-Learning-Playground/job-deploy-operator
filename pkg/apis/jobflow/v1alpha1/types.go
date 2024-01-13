@@ -20,22 +20,34 @@ type JobFlow struct {
 }
 
 type JobFlowSpec struct {
+	// Flows 多个 flow 步骤流程
 	Flows []Flow `json:"flows,omitempty"`
 }
 
 type Flow struct {
-	// job name, namespace 就是默认 namespace
+	// job name, namespace 就是默认 JobFlow namespace
 	Name string `json:"name"`
-	// 用于赋值
-	JobTemplate v1.JobSpec `json:"jobTemplate"`
-	// 依赖项
+	// 用于赋值 job 模版
+	JobTemplate v1.JobSpec `json:"jobTemplate,omitempty"`
+	// Dependencies 依赖项，其中可以填写多个 依赖的 job name
+	// ex: 如果 job3 依赖 job1 and job2, 就能
 	Dependencies []string `json:"dependencies"`
 }
 
 type JobFlowStatus struct {
-	// 用于存储 map 是 name/namespace 的方式 或是只要 name就行
+	// 用于存储 map 是 name/namespace 进行存储
 	JobStatusList map[string]v1.JobStatus `json:"jobStatusList,omitempty"`
+	// 记录 JobFlow 状态
+	State string `json:"state,omitempty"`
 }
+
+const (
+	Succeed     = "Succeed"     // 代表 JobFlow 中所有 Job 都執行成功
+	Terminating = "Terminating" // 代表 JobFlow 正在被刪除
+	Failed      = "Failed"      // 代表 JobFlow 執行失敗
+	Running     = "Running"     // 代表 JobFlow 有任何一個 Job 正在執行
+	Pending     = "Pending"     // 代表 JobFlow 正在等待
+)
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 

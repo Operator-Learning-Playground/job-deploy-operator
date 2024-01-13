@@ -23,7 +23,6 @@ package v1alpha1
 
 import (
 	v1 "k8s.io/api/batch/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -138,11 +137,12 @@ func (in *JobFlowStatus) DeepCopyInto(out *JobFlowStatus) {
 	*out = *in
 	if in.JobStatusList != nil {
 		in, out := &in.JobStatusList, &out.JobStatusList
-		*out = make([]v1.JobStatus, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
+		*out = make(map[string]v1.JobStatus, len(*in))
+		for key, val := range *in {
+			(*out)[key] = *val.DeepCopy()
 		}
 	}
+	out.State = in.State
 	return
 }
 
@@ -155,3 +155,5 @@ func (in *JobFlowStatus) DeepCopy() *JobFlowStatus {
 	in.DeepCopyInto(out)
 	return out
 }
+
+

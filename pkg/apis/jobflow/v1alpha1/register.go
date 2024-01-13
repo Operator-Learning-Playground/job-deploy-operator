@@ -7,12 +7,14 @@ import (
 )
 
 const (
-	ClusterConfigGroup   = "api.practice.com"
-	ClusterConfigVersion = "v1alpha1"
+	JobFlowGroup      = "api.practice.com"
+	JobFlowVersion    = "v1alpha1"
+	JobFlowKind       = "JobFlow"
+	JobFlowApiVersion = "api.practice.com/v1alpha1"
 )
 
 // SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = schema.GroupVersion{Group: ClusterConfigGroup, Version: ClusterConfigVersion}
+var SchemeGroupVersion = schema.GroupVersion{Group: JobFlowGroup, Version: JobFlowVersion}
 
 // Kind takes an unqualified kind and returns back a Group qualified GroupKind
 func Kind(kind string) schema.GroupKind {

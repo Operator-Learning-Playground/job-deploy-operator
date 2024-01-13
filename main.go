@@ -4,14 +4,17 @@ import (
 	jobflowv1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/jobflow/v1alpha1"
 	"github.com/myoperator/jobflowoperator/pkg/controller"
 	"github.com/myoperator/jobflowoperator/pkg/k8sconfig"
+	batchv1 "k8s.io/api/batch/v1"
 	_ "k8s.io/code-generator"
 	"k8s.io/klog/v2"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 	"time"
 )
 
@@ -50,7 +53,7 @@ func main() {
 	var d time.Duration = 0
 	// 1. 管理器初始化
 	mgr, err := manager.New(k8sconfig.K8sRestConfig(), manager.Options{
-		Logger:     logf.Log.WithName("jobflow-operator"),
+		Logger:     logf.Log.WithName("JobFlow operator"),
 		SyncPeriod: &d, // resync不设置触发
 	})
 	if err != nil {
@@ -66,9 +69,16 @@ func main() {
 	}
 
 	// 3. 控制器相关
-	jobFlowCtl := controller.NewJobFlowController(mgr.GetClient(), mgr.GetLogger(), mgr.GetScheme())
+	jobFlowCtl := controller.NewJobFlowController(mgr.GetClient(), mgr.GetLogger(),
+		mgr.GetScheme(), mgr.GetEventRecorderFor("JobFlow operator"))
 
-	err = builder.ControllerManagedBy(mgr).For(&jobflowv1alpha1.JobFlow{}).Complete(jobFlowCtl)
+	err = builder.ControllerManagedBy(mgr).For(&jobflowv1alpha1.JobFlow{}).
+		Watches(&source.Kind{Type: &batchv1.Job{}},
+			handler.Funcs{
+				UpdateFunc: jobFlowCtl.OnUpdateJobHandler,
+				DeleteFunc: jobFlowCtl.OnDeleteJobHandler,
+			},
+		).Complete(jobFlowCtl)
 
 	errC := make(chan error)
 
