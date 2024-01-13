@@ -1,7 +1,7 @@
 apiVersion: api.practice.com/v1alpha1
 kind: JobFlow
 metadata:
-  name: my-sequential-job
+  name: jobflow-example
 spec:
   # 可填写多个 flow 流程
   # 每个 flow 中重要字段 分别为：
@@ -56,6 +56,23 @@ spec:
         - job1
         - job2
     - name: job4
+      jobTemplate:
+        template:
+          spec:
+            containers:
+              - image: busybox:1.28
+                command:
+                  - sh
+                  - -c
+                  - sleep 10s
+                imagePullPolicy: IfNotPresent
+                name: nginx
+            restartPolicy: OnFailure
+    - name: job5
+      dependencies:
+        # 代表依赖 job2 job4 后才执行
+        - job4
+        - job2
       jobTemplate:
         template:
           spec:

@@ -16,18 +16,18 @@ import (
 )
 
 type JobFlowController struct {
-	client   client.Client
-	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
-	log      logr.Logger
+	client client.Client
+	Scheme *runtime.Scheme
+	event  record.EventRecorder
+	log    logr.Logger
 }
 
-func NewJobFlowController(client client.Client, log logr.Logger, scheme *runtime.Scheme, recorder record.EventRecorder) *JobFlowController {
+func NewJobFlowController(client client.Client, log logr.Logger, scheme *runtime.Scheme, event record.EventRecorder) *JobFlowController {
 	return &JobFlowController{
-		client:   client,
-		log:      log,
-		Recorder: recorder,
-		Scheme:   scheme,
+		client: client,
+		log:    log,
+		event:  event,
+		Scheme: scheme,
 	}
 }
 
@@ -47,11 +47,11 @@ func (r *JobFlowController) Reconcile(ctx context.Context, req reconcile.Request
 			return reconcile.Result{}, nil
 		}
 		klog.Error(err, err.Error())
-		r.Recorder.Eventf(jobFlow, v1.EventTypeWarning, "Created", err.Error())
+		r.event.Eventf(jobFlow, v1.EventTypeWarning, "Created", err.Error())
 		return reconcile.Result{}, err
 	}
 
-	if jobFlow.Status.State == jobflowv1alpha1.Succeed {
+	if jobFlow.Status.State == jobflowv1alpha1.Failed {
 		return reconcile.Result{}, nil
 	}
 
@@ -61,13 +61,20 @@ func (r *JobFlowController) Reconcile(ctx context.Context, req reconcile.Request
 	// deploy job by dependence order.
 	if err = r.deployJobFlow(ctx, *jobFlow); err != nil {
 		klog.Error("deployJob error: ", err)
-		return reconcile.Result{}, err
+		r.event.Eventf(jobFlow, v1.EventTypeWarning, "Failed", err.Error())
+		// 如果是 执行 job 任务出错，跳转
+		if errors.IsBadRequest(err) {
+			goto continueExecution
+		}
+		return reconcile.Result{RequeueAfter: time.Second * 60}, err
 	}
 
+continueExecution:
 	// update status
 	// 修改 job 狀態，list 出所有相關的 job ，並查看其狀態，並存在 status 中
 	if err = r.updateJobFlowStatus(ctx, jobFlow); err != nil {
 		klog.Error("update jobFlow status error: ", err)
+		r.event.Eventf(jobFlow, v1.EventTypeWarning, "Failed", err.Error())
 		return reconcile.Result{}, err
 	}
 	klog.Info("end jobFlow Reconcile........")

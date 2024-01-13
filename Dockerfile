@@ -20,13 +20,13 @@ RUN go mod download
 COPY main.go main.go
 COPY pkg/ pkg/
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o myclusterconfigoperator main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o jobflowoperator main.go
 
 
 FROM alpine:3.12
 WORKDIR /app
 # 需要的文件需要复制过来
-COPY --from=builder /app/myclusterconfigoperator .
+COPY --from=builder /app/jobflowoperator .
 USER 65532:65532
 
-ENTRYPOINT ["./myclusterconfigoperator"]
+ENTRYPOINT ["./jobflowoperator"]
