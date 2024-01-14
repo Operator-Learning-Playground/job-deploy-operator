@@ -6,7 +6,7 @@
 
 ![](./image/%E6%97%A0%E6%A0%87%E9%A2%98-2023-08-10-2343.png?raw=true)
 
-- crd 资源对象如下，更多信息可以参考 [参考](./yaml/example1.yaml)
+- crd 资源对象如下，更多信息可以参考 [参考](./yaml/example.yaml)
     - name: flow 名称，多个 flow 名称不能重复
     - dependencies: 定义依赖项，如果有多个依赖可以填写多个
     - jobTemplate: job 模版，支持 k8s 原生 job spec 全部字段
@@ -35,7 +35,6 @@ spec:
                   - sleep 10s
                 imagePullPolicy: IfNotPresent
                 name: nginx
-            restartPolicy: OnFailure
     - name: job2
       jobTemplate:
         template:
@@ -48,7 +47,6 @@ spec:
                   - sleep 100s
                 imagePullPolicy: IfNotPresent
                 name: nginx
-            restartPolicy: OnFailure
       dependencies:
         - job1  # 代表 job2 依赖 job1 完成后才开始启动
     - name: job3
@@ -63,7 +61,6 @@ spec:
                   - sleep 100s
                 imagePullPolicy: IfNotPresent
                 name: nginx
-            restartPolicy: OnFailure
       dependencies:
         # 代表 job3 依赖 job1 job2 完成后才开始启动
         - job1
@@ -80,7 +77,6 @@ spec:
                   - sleep 10s
                 imagePullPolicy: IfNotPresent
                 name: nginx
-            restartPolicy: OnFailure
     - name: job5
       dependencies:
         # 代表依赖 job2 job4 后才执行
@@ -97,5 +93,9 @@ spec:
                   - sleep 10s
                 imagePullPolicy: IfNotPresent
                 name: nginx
-            restartPolicy: OnFailure
 ```
+
+### 项目功能
+1. 支持 JobFlow 任务中的 job 依赖执行
+2. 查看任务流状态
+- 注：pod 字段中的 **restartPolicy**  不允许被使用，就算定义后也不会生效(都会被强制设为"Never")

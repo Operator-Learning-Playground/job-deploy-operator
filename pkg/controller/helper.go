@@ -92,6 +92,8 @@ func (r *JobFlowController) deployJobFlow(ctx context.Context, jobFlow jobflowv1
 
 						// 如果依赖的 job 出错，直接退出
 						if dependenciesJob.Status.Failed == 1 {
+
+							// TODO: 这里要加入出错逻辑
 							return errors.NewBadRequest(fmt.Sprintf("dependencies Job %s execute error", dependenciesJob.Name))
 						}
 					}
