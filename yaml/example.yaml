@@ -3,6 +3,25 @@ kind: JobFlow
 metadata:
   name: jobflow-example
 spec:
+  # 可配置任务流中的全局参数，当设置后会在每个 job 与 pod 中都生效
+  globalParams:
+    # 可决定所有 job 都运行在同一节点上
+    nodeName: minikube
+    # 可加入 container 所需的参数
+    env:
+      - name: "FOO"
+        value: "bar"
+      - name: "QUE"
+        value: "pasa"
+    # job pod 的 annotations
+    annotations:
+      key1: value1
+      key2: value2
+    # job pod 的 labels
+    labels:
+      key1: value1
+      key2: value2
+
   # 可填写多个 flow 流程
   # 每个 flow 中重要字段 分别为：
   # name: flow 名称，多个 flow 名称不能重复

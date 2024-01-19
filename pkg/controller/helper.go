@@ -19,21 +19,14 @@ import (
 func (r *JobFlowController) deployJobFlow(ctx context.Context, jobFlow jobflowv1alpha1.JobFlow) error {
 	// 启动 job
 	for _, flow := range jobFlow.Spec.Flows {
-		// job 对象
-		job := &batchv1.Job{}
+
 		jobName := getJobName(jobFlow.Name, flow.Name)
 		namespacedNameJob := types.NamespacedName{
 			Namespace: jobFlow.Namespace,
 			Name:      jobName,
 		}
-
-		// 设置 ownerReferences
-		job.OwnerReferences = append(job.OwnerReferences, metav1.OwnerReference{
-			APIVersion: jobFlow.APIVersion,
-			Kind:       jobFlow.Kind,
-			Name:       jobFlow.Name,
-			UID:        jobFlow.UID,
-		})
+		// job 对象
+		job := prepareJob(&jobFlow, &flow, jobName)
 
 		// 如果没拿到这个 job
 		if err := r.client.Get(ctx, namespacedNameJob, job); err != nil {
@@ -41,11 +34,6 @@ func (r *JobFlowController) deployJobFlow(ctx context.Context, jobFlow jobflowv1
 				// 判斷 job 是否有 Dependencies，
 				// 如果沒有，直接創建，如果有，則要判斷 Dependencies 中的 job 是否已經成功
 				if len(flow.Dependencies) == 0 {
-					// 获取到 jobTemplate
-					job.Name = jobName
-					job.Namespace = jobFlow.Namespace
-					job.Spec = flow.JobTemplate
-					job.Spec.Template.Spec.RestartPolicy = v1.RestartPolicyNever
 					// 直接创建
 					if err = r.client.Create(ctx, job); err != nil {
 						if errors.IsAlreadyExists(err) {
@@ -59,22 +47,15 @@ func (r *JobFlowController) deployJobFlow(ctx context.Context, jobFlow jobflowv1
 					// query dependency meets the requirements
 					flag := true
 					// 查看依赖的 job 是否已经完成，
-					for _, targetName := range flow.Dependencies {
-						dependenciesJob := &batchv1.Job{}
+					for _, dependencyName := range flow.Dependencies {
 
-						job.Name = jobName
-						job.Namespace = jobFlow.Namespace
-						job.Spec = flow.JobTemplate
-						job.Spec.Template.Spec.RestartPolicy = v1.RestartPolicyNever
-						var cc int32
-						job.Spec.BackoffLimit = &cc
-
-						targetJobName := getJobName(jobFlow.Name, targetName)
+						dependencyJobName := getJobName(jobFlow.Name, dependencyName)
 						namespacedName := types.NamespacedName{
 							Namespace: jobFlow.Namespace,
-							Name:      targetJobName,
+							Name:      dependencyJobName,
 						}
-						// 获取 job
+						// 获取依赖的 job
+						dependenciesJob := &batchv1.Job{}
 						if err = r.client.Get(ctx, namespacedName, dependenciesJob); err != nil {
 							if err != nil {
 								if errors.IsNotFound(err) {
@@ -145,6 +126,51 @@ func (r *JobFlowController) updateJobFlowStatus(ctx context.Context, jobFlow *jo
 		return err
 	}
 	return nil
+}
+
+func prepareJob(jobFlow *jobflowv1alpha1.JobFlow, flow *jobflowv1alpha1.Flow, jobName string) *batchv1.Job {
+	// job 对象
+	job := &batchv1.Job{}
+
+	// 设置 ownerReferences
+	job.OwnerReferences = append(job.OwnerReferences, metav1.OwnerReference{
+		APIVersion: jobFlow.APIVersion,
+		Kind:       jobFlow.Kind,
+		Name:       jobFlow.Name,
+		UID:        jobFlow.UID,
+	})
+
+	job.Name = jobName
+	job.Namespace = jobFlow.Namespace
+	job.Spec = flow.JobTemplate
+
+	// 强制设置 job 不重启与重试次数
+	job.Spec.Template.Spec.RestartPolicy = v1.RestartPolicyNever
+	var cc int32
+	job.Spec.BackoffLimit = &cc
+
+	// 加入 flow 全局参数
+	if jobFlow.Spec.GlobalParams.Annotations != nil {
+		job.Annotations = jobFlow.Spec.GlobalParams.Annotations
+		job.Spec.Template.Annotations = jobFlow.Spec.GlobalParams.Annotations
+	}
+
+	if jobFlow.Spec.GlobalParams.Labels != nil {
+		job.Labels = jobFlow.Spec.GlobalParams.Labels
+		job.Spec.Template.Labels = jobFlow.Spec.GlobalParams.Labels
+	}
+
+	if jobFlow.Spec.GlobalParams.NodeName != "" {
+		job.Spec.Template.Spec.NodeName = jobFlow.Spec.GlobalParams.NodeName
+	}
+
+	if jobFlow.Spec.GlobalParams.Env != nil {
+		for k, _ := range job.Spec.Template.Spec.Containers {
+			job.Spec.Template.Spec.Containers[k].Env = jobFlow.Spec.GlobalParams.Env
+		}
+	}
+
+	return job
 }
 
 // getAllJobStatus 记录 Job Status

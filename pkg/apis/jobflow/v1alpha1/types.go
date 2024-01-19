@@ -2,6 +2,7 @@ package v1alpha1
 
 import (
 	v1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -20,8 +21,33 @@ type JobFlow struct {
 }
 
 type JobFlowSpec struct {
+	// GlobalParameters 全局参数
+	GlobalParams GlobalParams `json:"globalParams"`
 	// Flows 多个 flow 步骤流程
-	Flows []Flow `json:"flows,omitempty"`
+	Flows []Flow `json:"flows"`
+	// TODO: ErrorHandler 错误处理逻辑
+	ErrorHandler ErrorHandler
+}
+
+// GlobalParams 全局参数
+type GlobalParams struct {
+	// Env 容器环境变量
+	Env []corev1.EnvVar `json:"env,omitempty"`
+	// NodeName 选择调度节点
+	NodeName string `json:"nodeName,omitempty"`
+	// Labels job pod 的 labels
+	Labels map[string]string `json:"labels,omitempty"`
+	// Annotations job pod 的 annotations
+	Annotations map[string]string `json:"annotations,omitempty"`
+}
+
+type ErrorHandler struct {
+	// 用于赋值 job 模版
+	corev1.PodSpec
+
+	JobTemplate v1.JobSpec `json:"jobTemplate,omitempty"`
+	// 支持脚本命令
+	Script string `json:"script,omitempty"`
 }
 
 type Flow struct {

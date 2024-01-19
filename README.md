@@ -7,6 +7,7 @@
 ![](./image/%E6%97%A0%E6%A0%87%E9%A2%98-2023-08-10-2343.png?raw=true)
 
 - crd 资源对象如下，更多信息可以参考 [参考](./yaml/example.yaml)
+    - globalParams: 全局参数，会自动渲染到每个 job 中
     - name: flow 名称，多个 flow 名称不能重复
     - dependencies: 定义依赖项，如果有多个依赖可以填写多个
     - jobTemplate: job 模版，支持 k8s 原生 job spec 全部字段
@@ -16,6 +17,25 @@ kind: JobFlow
 metadata:
   name: jobflow-example
 spec:
+  # 可配置任务流中的全局参数，当设置后会在每个 job 与 pod 中都生效
+  globalParams:
+    # 可决定所有 job 都运行在同一节点上
+    nodeName: minikube
+    # 可加入 container 所需的参数
+    env:
+      - name: "FOO"
+        value: "bar"
+      - name: "QUE"
+        value: "pasa"
+    # job pod 的 annotations    
+    annotations:
+      key1: value1
+      key2: value2
+    # job pod 的 labels  
+    labels:
+      key1: value1
+      key2: value2
+      
   # 可填写多个 flow 流程
   # 每个 flow 中重要字段 分别为：
   # name: flow 名称，多个 flow 名称不能重复
