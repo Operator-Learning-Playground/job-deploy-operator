@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: jobflow-controller
+  name: jobflowoperator-controller
   namespace: default
 spec:
   selector:
     matchLabels:
-      app: jobflow-controller
+      app: jobflowoperator-controller
   replicas: 1
   template:
     metadata:
       labels:
-        app: jobflow-controller
+        app: jobflowoperator-controller
     spec:
-      nodeName: vm-0-16-centos # 只调度到这个节点上
-      serviceAccountName: jobflow-sa # 配置service account
+      nodeName: vm-0-12-centos # 只调度到这个节点上
+      serviceAccountName: jobflowoperator-sa # 配置service account
       containers:
-        - name: jobflow # 控制器镜像
+        - name: jobflowoperator # 控制器镜像
           image: jobflowoperator:v1
           imagePullPolicy: IfNotPresent
           env:

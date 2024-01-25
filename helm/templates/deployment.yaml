@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.base.name }}
+  namespace: {{ .Values.base.namespace }}
+  labels:
+    app: {{ .Values.base.name }}
+spec:
+  replicas: {{ .Values.base.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.base.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.base.name }}
+    spec:
+      serviceAccountName: {{ .Values.rbac.serviceaccountname }}
+      containers:
+        - name: {{ .Values.base.name }}
+          image: {{ .Values.base.image }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: "Release"
+              value: "1"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

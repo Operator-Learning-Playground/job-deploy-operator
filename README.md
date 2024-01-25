@@ -122,6 +122,12 @@ spec:
 ### 项目功能
 1. 支持 JobFlow 任务中的 job 依赖执行
 2. 查看任务流状态
+```yaml
+[root@vm-0-12-centos jobflow]# kubectl get jobflows.api.practice.com
+NAME                    STATUS    AGE
+jobflow-example         Running   117s
+jobflow-example-error   Failed    117s
+```
 - 注：pod 字段中的 **restartPolicy**  不允许被使用，就算定义后也不会生效(都会被强制设为"Never")
 
 
@@ -177,5 +183,16 @@ spec:
 ### 项目功能
 1. 支持 DaemonJob 任务中的 job 执行
 2. 查看任务流状态
+```bash
+[root@vm-0-12-centos jobflow]# kubectl get daemonjobs.api.practice.com
+NAME                STATUS    AGE
+daemonjob-example   Running   117s
+[root@vm-0-12-centos jobflow]# kubectl get daemonjobs.api.practice.com
+NAME                STATUS    AGE
+daemonjob-example   Succeed   3m21s
+```
 - 注：pod 字段中的 **restartPolicy**  不允许被使用，就算定义后也不会生效(都会被强制设为"Never")
 
+
+### 部署
+目前已支持 helm 部署，请参考 [这里](helm)
