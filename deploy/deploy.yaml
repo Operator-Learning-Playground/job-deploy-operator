@@ -22,8 +22,6 @@ spec:
           env:
             - name: "Release"
               value: "1"
-          workingDir: "/app"
-          command: ["./jobflowoperator"]
           ports:
             - containerPort: 80
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	daemonjobv1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/daemonjob/v1alpha1"
 	jobflowv1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/jobflow/v1alpha1"
 	"github.com/myoperator/jobflowoperator/pkg/controller"
 	"github.com/myoperator/jobflowoperator/pkg/k8sconfig"
@@ -68,6 +69,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = daemonjobv1alpha1.SchemeBuilder.AddToScheme(mgr.GetScheme())
+	if err != nil {
+		klog.Error(err, "unable add schema")
+		os.Exit(1)
+	}
+
 	// 3. 控制器相关
 	jobFlowCtl := controller.NewJobFlowController(mgr.GetClient(), mgr.GetLogger(),
 		mgr.GetScheme(), mgr.GetEventRecorderFor("JobFlow operator"))
@@ -75,10 +82,22 @@ func main() {
 	err = builder.ControllerManagedBy(mgr).For(&jobflowv1alpha1.JobFlow{}).
 		Watches(&source.Kind{Type: &batchv1.Job{}},
 			handler.Funcs{
-				UpdateFunc: jobFlowCtl.OnUpdateJobHandler,
-				DeleteFunc: jobFlowCtl.OnDeleteJobHandler,
+				UpdateFunc: jobFlowCtl.OnUpdateJobHandlerByJobFlow,
+				DeleteFunc: jobFlowCtl.OnDeleteJobHandlerByJobFlow,
 			},
 		).Complete(jobFlowCtl)
+
+	// 3. 控制器相关
+	daemonJobCtl := controller.NewDaemonJobController(mgr.GetClient(), mgr.GetLogger(),
+		mgr.GetScheme(), mgr.GetEventRecorderFor("DaemonJob operator"))
+
+	err = builder.ControllerManagedBy(mgr).For(&daemonjobv1alpha1.DaemonJob{}).
+		Watches(&source.Kind{Type: &batchv1.Job{}},
+			handler.Funcs{
+				UpdateFunc: daemonJobCtl.OnUpdateJobHandlerByDaemonJob,
+				DeleteFunc: daemonJobCtl.OnDeleteJobHandlerByDaemonJob,
+			},
+		).Complete(daemonJobCtl)
 
 	errC := make(chan error)
 

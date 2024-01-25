@@ -232,7 +232,7 @@ func getAllJobStatus(jobFlow *jobflowv1alpha1.JobFlow, allJobList *batchv1.JobLi
 	return &jobFlowStatus, nil
 }
 
-func (r *JobFlowController) OnUpdateJobHandler(event event.UpdateEvent, limitingInterface workqueue.RateLimitingInterface) {
+func (r *JobFlowController) OnUpdateJobHandlerByJobFlow(event event.UpdateEvent, limitingInterface workqueue.RateLimitingInterface) {
 	for _, ref := range event.ObjectNew.GetOwnerReferences() {
 		if ref.Kind == jobflowv1alpha1.JobFlowKind && ref.APIVersion == jobflowv1alpha1.JobFlowApiVersion {
 			// 重新放入 Reconcile 调协方法
@@ -245,7 +245,7 @@ func (r *JobFlowController) OnUpdateJobHandler(event event.UpdateEvent, limiting
 	}
 }
 
-func (r *JobFlowController) OnDeleteJobHandler(event event.DeleteEvent, limitingInterface workqueue.RateLimitingInterface) {
+func (r *JobFlowController) OnDeleteJobHandlerByJobFlow(event event.DeleteEvent, limitingInterface workqueue.RateLimitingInterface) {
 	for _, ref := range event.Object.GetOwnerReferences() {
 		if ref.Kind == jobflowv1alpha1.JobFlowKind && ref.APIVersion == jobflowv1alpha1.JobFlowApiVersion {
 			// 重新入列
