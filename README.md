@@ -127,6 +127,24 @@ spec:
 NAME                    STATUS    AGE
 jobflow-example         Running   117s
 jobflow-example-error   Failed    117s
+[root@vm-0-12-centos jobflow]# kubectl get jobs | grep jobflow-example
+jobflow-example-error-job1                   1/1           13s        3d18h
+jobflow-example-error-job2-error-container   0/1           3d18h      3d18h
+jobflow-example-error-job4                   1/1           12s        3d18h
+jobflow-example-job1                         1/1           12s        2m44s
+jobflow-example-job2                         1/1           102s       2m31s
+jobflow-example-job3                         0/1           48s        48s
+jobflow-example-job4                         1/1           12s        2m44s
+jobflow-example-job5                         1/1           12s        48s
+[root@vm-0-12-centos jobflow]# kubectl  get pods | grep jobflow-example
+jobflow-example-error-job1-x9tn8                   0/1     Completed   0          3d18h
+jobflow-example-error-job2-error-container-wxpvb   0/1     Error       0          3d18h
+jobflow-example-error-job4-p286g                   0/1     Completed   0          3d18h
+jobflow-example-job1-4zq22                         0/1     Completed   0          3m8s
+jobflow-example-job2-qsvr9                         0/1     Completed   0          2m55s
+jobflow-example-job3-4f6lb                         1/1     Running     0          72s
+jobflow-example-job4-7ngpd                         0/1     Completed   0          3m8s
+jobflow-example-job5-m8cwg                         0/1     Completed   0          72s
 ```
 - 注：pod 字段中的 **restartPolicy**  不允许被使用，就算定义后也不会生效(都会被强制设为"Never")
 
@@ -190,6 +208,10 @@ daemonjob-example   Running   117s
 [root@vm-0-12-centos jobflow]# kubectl get daemonjobs.api.practice.com
 NAME                STATUS    AGE
 daemonjob-example   Succeed   3m21s
+[root@vm-0-12-centos jobflowoperator]# kubectl  get jobs | grep daemonjob-example
+daemonjob-example-vm-0-12-centos             1/1           102s       3d17h
+daemonjob-example-vm-0-17-centos             1/1           102s       3d17h
+
 ```
 - 注：pod 字段中的 **restartPolicy**  不允许被使用，就算定义后也不会生效(都会被强制设为"Never")
 

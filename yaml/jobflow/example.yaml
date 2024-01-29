@@ -6,7 +6,7 @@ spec:
   # 可配置任务流中的全局参数，当设置后会在每个 job 与 pod 中都生效
   globalParams:
     # 可决定所有 job 都运行在同一节点上
-    nodeName: minikube
+    # nodeName: minikube
     # 可加入 container 所需的参数
     env:
       - name: "FOO"
