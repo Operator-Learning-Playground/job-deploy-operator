@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/go-logr/logr"
 	daemonjobv1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/daemonjob/v1alpha1"
-	jobflowv1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/jobflow/v1alpha1"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -59,7 +58,7 @@ func (r *DaemonJobController) Reconcile(ctx context.Context, req reconcile.Reque
 		return reconcile.Result{}, err
 	}
 
-	if daemonJob.Status.State == jobflowv1alpha1.Failed {
+	if daemonJob.Status.State == daemonjobv1alpha1.Failed {
 		return reconcile.Result{}, nil
 	}
 
@@ -201,7 +200,7 @@ func (r *DaemonJobController) updateJobFlowStatus(ctx context.Context, daemonJob
 		return err
 	}
 	daemonJob.Status = *jobFlowStatus
-	if jobFlowStatus.State == jobflowv1alpha1.Succeed || jobFlowStatus.State == jobflowv1alpha1.Failed {
+	if jobFlowStatus.State == daemonjobv1alpha1.Succeed || jobFlowStatus.State == daemonjobv1alpha1.Failed {
 		r.event.Eventf(daemonJob, v1.EventTypeNormal, jobFlowStatus.State, fmt.Sprintf("finshed JobFlow named %s", daemonJob.Name))
 	}
 	if err = r.client.Status().Update(ctx, daemonJob); err != nil {
@@ -264,18 +263,18 @@ func (r *DaemonJobController) getAllJobStatusFromDaemonJob(ctx context.Context, 
 
 	// 确认 jobFlow 狀態
 	if daemonJob.DeletionTimestamp != nil {
-		jobFlowStatus.State = jobflowv1alpha1.Terminating
+		jobFlowStatus.State = daemonjobv1alpha1.Terminating
 	} else {
 		if len(jobList) != len(completedJobs) {
 			if len(failedJobs) > 0 {
-				jobFlowStatus.State = jobflowv1alpha1.Failed
+				jobFlowStatus.State = daemonjobv1alpha1.Failed
 			} else if len(runningJobs) > 0 || len(completedJobs) > 0 {
-				jobFlowStatus.State = jobflowv1alpha1.Running
+				jobFlowStatus.State = daemonjobv1alpha1.Running
 			} else {
-				jobFlowStatus.State = jobflowv1alpha1.Pending
+				jobFlowStatus.State = daemonjobv1alpha1.Pending
 			}
 		} else {
-			jobFlowStatus.State = jobflowv1alpha1.Succeed
+			jobFlowStatus.State = daemonjobv1alpha1.Succeed
 		}
 	}
 
