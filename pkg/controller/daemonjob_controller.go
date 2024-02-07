@@ -132,14 +132,13 @@ func splitString(input, separator string) []string {
 	return result
 }
 
+// isJumpOverNode 跳过特定 node
 func isJumpOverNode(node string, excludeNodeList []string) bool {
-
 	for _, v := range excludeNodeList {
 		if node == v {
 			return true
 		}
 	}
-
 	return false
 }
 
@@ -249,8 +248,8 @@ func (r *DaemonJobController) getAllJobStatusFromDaemonJob(ctx context.Context, 
 	}
 
 	for _, job := range jobListRes {
-		a := fmt.Sprintf("%s/%s", job.Name, job.Namespace)
-		jobFlowStatus.JobStatusList[a] = job.Status
+		key := fmt.Sprintf("%s/%s", job.Name, job.Namespace)
+		jobFlowStatus.JobStatusList[key] = job.Status
 
 		if job.Status.Succeeded == 1 {
 			completedJobs = append(completedJobs, job.Name)
@@ -261,7 +260,7 @@ func (r *DaemonJobController) getAllJobStatusFromDaemonJob(ctx context.Context, 
 		}
 	}
 
-	// 确认 jobFlow 狀態
+	// 确认 daemonJob 狀態
 	if daemonJob.DeletionTimestamp != nil {
 		jobFlowStatus.State = daemonjobv1alpha1.Terminating
 	} else {

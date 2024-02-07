@@ -200,8 +200,8 @@ func getAllJobStatus(jobFlow *jobflowv1alpha1.JobFlow, allJobList *batchv1.JobLi
 	}
 
 	for _, job := range jobListRes {
-		a := fmt.Sprintf("%s/%s", job.Name, job.Namespace)
-		jobFlowStatus.JobStatusList[a] = job.Status
+		key := fmt.Sprintf("%s/%s", job.Name, job.Namespace)
+		jobFlowStatus.JobStatusList[key] = job.Status
 
 		if job.Status.Succeeded == 1 {
 			completedJobs = append(completedJobs, job.Name)
