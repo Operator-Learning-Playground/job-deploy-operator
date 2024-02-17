@@ -39,8 +39,8 @@ func NewDaemonJobController(client client.Client, log logr.Logger, scheme *runti
 }
 
 // Reconcile 调协 loop
-func (r *DaemonJobController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-
+func (r *DaemonJobController) Reconcile(ctx context.Context,
+	req reconcile.Request) (reconcile.Result, error) {
 	klog.Info("start DaemonJob Reconcile..........")
 
 	// load JobFlow by namespace
@@ -83,9 +83,8 @@ func (r *DaemonJobController) Reconcile(ctx context.Context, req reconcile.Reque
 }
 
 // deployDaemonJob deploy job by dependence order.
-func (r *DaemonJobController) deployDaemonJob(ctx context.Context, daemonJob *daemonjobv1alpha1.DaemonJob) error {
-
-	// 创建一个空的 Node 列表对象
+func (r *DaemonJobController) deployDaemonJob(ctx context.Context,
+	daemonJob *daemonjobv1alpha1.DaemonJob) error { // 创建一个空的 Node 列表对象
 	nodeList := &v1.NodeList{}
 	err := r.client.List(ctx, nodeList)
 	if err != nil {
@@ -93,7 +92,6 @@ func (r *DaemonJobController) deployDaemonJob(ctx context.Context, daemonJob *da
 	}
 
 	for _, v := range nodeList.Items {
-
 		// 如果是需要跳过的节点，不处理
 		if isJumpOverNode(v.Name, splitString(daemonJob.Spec.ExcludeNodeList, ",")) {
 			continue

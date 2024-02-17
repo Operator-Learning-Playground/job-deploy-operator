@@ -1,48 +1,50 @@
-## Simple Job Orchestration Operator
-<a href="./README.md">English</a> | <a href="./README-zh.md">简体中文</a>
-### Project Idea and Design
-Design Background: This project aims to implement a simple Job orchestration operator.
+## 简易型 Job 编排 Operator
+
+### 项目思路与设计
+设计背景：本项目实现简易型 Job 编排 Operator
 
 ### JobFlow
-Functionality: Native Job resources in Kubernetes do not have native orchestration features with dependencies (e.g., Job a completes -> execute Job b...). To address this requirement, a custom resource controller called JobFlow is implemented based on Kubernetes' extension capabilities. It enables the execution of multiple Job trees in an operator application.
+功能：k8s 当中原生的 Job 资源对象执行时，并没有相互依赖的编排特性(ex: Job a 完成后 -> 再执行Job b ...)。
+在此需求上，基于 k8s 的扩展功能，实现 JobFlow 的自定义资源控制器，实现一个能执行多 Job 树状引擎的 operator 应用。
 
 
 ![](./image/jobflow.png?raw=true)
 
-- The CRD (Custom Resource Definition) resource object is as follows. For more information, please refer to reference. [reference](yaml/jobflow/example.yaml)
-    - globalParams: Global parameters that will be automatically rendered in each job.
-    - name: flow name, multiple flow names cannot be repeated
-    - dependencies: Define dependencies. If there are multiple dependencies, we can fill in multiple
-    - jobTemplate: Job template that supports Kubernetes native job spec fields.
+- crd 资源对象如下，更多信息可以参考 [参考](yaml/jobflow/example.yaml)
+    - globalParams: 全局参数，会自动渲染到每个 job 中
+    - name: flow 名称，多个 flow 名称不能重复
+    - dependencies: 定义依赖项，如果有多个依赖可以填写多个
+    - jobTemplate: job 模版，支持 k8s 原生 job spec 全部字段
 ```yaml
 apiVersion: api.practice.com/v1alpha1
 kind: JobFlow
 metadata:
   name: jobflow-example
 spec:
-  # Configurable global parameters in the job flow, which will take effect in each job and pod
+  # 可配置任务流中的全局参数，当设置后会在每个 job 与 pod 中都生效
   globalParams:
-    # Determines that all jobs run on the same node
+    # 可决定所有 job 都运行在同一节点上
     nodeName: minikube
-    # Add parameters required by the container
+    # 可加入 container 所需的参数
     env:
       - name: "FOO"
         value: "bar"
       - name: "QUE"
         value: "pasa"
-    # Annotations for job pods
+    # job pod 的 annotations    
     annotations:
       key1: value1
       key2: value2
-    # Labels for job pods
-    labels:   
+    # job pod 的 labels  
+    labels:
       key1: value1
       key2: value2
-  # You can specify multiple flow processes
-  # Important fields in each flow are:
-  # name: Flow name. Multiple flow names must be unique.
-  # dependencies: Defines the dependencies. Multiple dependencies can be specified.
-  # jobTemplate: Job template that supports all native Kubernetes job spec fields.
+      
+  # 可填写多个 flow 流程
+  # 每个 flow 中重要字段 分别为：
+  # name: flow 名称，多个 flow 名称不能重复
+  # dependencies: 定义依赖项，如果有多个依赖可以填写多个
+  # jobTemplate: job 模版，支持 k8s 原生 job spec 全部字段
   flows:
     - name: job1
       dependencies: []
@@ -70,7 +72,7 @@ spec:
                 imagePullPolicy: IfNotPresent
                 name: nginx
       dependencies:
-        - job1  # job2 depends on job1 to complete before starting
+        - job1  # 代表 job2 依赖 job1 完成后才开始启动
     - name: job3
       jobTemplate:
         template:
@@ -84,7 +86,7 @@ spec:
                 imagePullPolicy: IfNotPresent
                 name: nginx
       dependencies:
-        # job3 depends on job1 and job2 to complete before starting
+        # 代表 job3 依赖 job1 job2 完成后才开始启动
         - job1
         - job2
     - name: job4
@@ -101,7 +103,7 @@ spec:
                 name: nginx
     - name: job5
       dependencies:
-        # job5 depends on job2 and job4 to complete before starting
+        # 代表依赖 job2 job4 后才执行
         - job4
         - job2
       jobTemplate:
@@ -117,9 +119,9 @@ spec:
                 name: nginx
 ```
 
-### Features
-1. Supports job dependencies in JobFlow tasks.
-2. View the status of the job flow.
+### 项目功能
+1. 支持 JobFlow 任务中的 job 依赖执行
+2. 查看任务流状态
 ```yaml
 [root@vm-0-12-centos jobflow]# kubectl get jobflows.api.practice.com
 NAME                    STATUS    AGE
@@ -144,31 +146,29 @@ jobflow-example-job3-4f6lb                         1/1     Running     0        
 jobflow-example-job4-7ngpd                         0/1     Completed   0          3m8s
 jobflow-example-job5-m8cwg                         0/1     Completed   0          72s
 ```
-- Note: The restartPolicy field in the Pod specification is not allowed to be used, 
-and even if defined, it will not take effect (it will be forcibly set to "Never").
+- 注：pod 字段中的 **restartPolicy**  不允许被使用，就算定义后也不会生效(都会被强制设为"Never")
 
 
 ### DaemonJob
-Functionality: When native Job resources are executed in Kubernetes, there is no workload similar to the daemonset workload in Pods. 
-Based on this requirement, we aim to implement a custom resource controller called DaemonJob using Kubernetes' extension capabilities. 
-This controller will enable the execution of jobs on selected nodes, providing an operator application that can execute jobs on designated nodes.
+功能：k8s 当中原生的 Job 资源对象执行时，并没有类似 pod 中的 daemonset 的工作负载。
+在此需求上，基于 k8s 的扩展功能，实现 DaemonJob 的自定义资源控制器，实现一个能选定节点执行 job 的 operator 应用。
 
 
 ![](./image/daemonjob.png?raw=true)
 
-- The CRD (Custom Resource Definition) resource object is as follows. For more information, please refer to reference. [reference](yaml/daemonjob/example.yaml)
-  - globalParams: Global parameters that will be automatically rendered in each job.
-  - excludeNodeList: Node names where the job should not be executed, separated by commas.
-  - template: Job template that supports Kubernetes native job spec fields.
+- crd 资源对象如下，更多信息可以参考 [参考](yaml/daemonjob/example.yaml)
+  - globalParams: 全局参数，会自动渲染到每个 job 中
+  - excludeNodeList: 不执行 job 的节点名称，使用 "," 隔开
+  - template: job 模版，支持 k8s 原生 job spec 字段
 ```yaml
 apiVersion: api.practice.com/v1alpha1
 kind: DaemonJob
 metadata:
   name: daemonjob-example
 spec:
-  # Configurable global parameters in the job flow, which will take effect in each job and pod
+  # 可配置任务流中的全局参数，当设置后会在每个 job 与 pod 中都生效
   globalParams:
-    # Add parameters required by the container
+    # 可加入 container 所需的参数
     env:
       - name: "FOO"
         value: "bar"
@@ -182,9 +182,9 @@ spec:
     labels:
       key1: value1
       key2: value2
-  # Except these nodes are not created, jobs must be created, separated by ","
+  # 除这些节点之外，都要创建 job, 使用 "," 隔开
   excludeNodeList: node1, node2
-  # Support native job Template template
+  # 支持原生 job Template 模版
   template:
     spec:
       restartPolicy: OnFailure
@@ -198,9 +198,9 @@ spec:
           name: nginx
 ```
 
-### Features
-1. Support job execution in DaemonJob tasks
-2. View the status of the job flow
+### 项目功能
+1. 支持 DaemonJob 任务中的 job 执行
+2. 查看任务流状态
 ```bash
 [root@vm-0-12-centos jobflow]# kubectl get daemonjobs.api.practice.com
 NAME                STATUS    AGE
@@ -213,9 +213,8 @@ daemonjob-example-vm-0-12-centos             1/1           102s       3d17h
 daemonjob-example-vm-0-17-centos             1/1           102s       3d17h
 
 ```
-- Note: The restartPolicy field in the Pod specification is not allowed to be used,
-  and even if defined, it will not take effect (it will be forcibly set to "Never").
+- 注：pod 字段中的 **restartPolicy**  不允许被使用，就算定义后也不会生效(都会被强制设为"Never")
 
 
-### Install
-Helm deployment is currently supported, please refer to [here](helm)
+### 部署
+目前已支持 helm 部署，请参考 [这里](helm)
