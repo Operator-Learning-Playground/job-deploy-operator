@@ -1,0 +1,38 @@
+apiVersion: api.practice.com/v1alpha1
+kind: JobFlow
+metadata:
+  name: jobflow-example-template
+spec:
+  # 可配置任务流中的全局参数，当设置后会在每个 job 与 pod 中都生效
+  globalParams:
+    # 可决定所有 job 都运行在同一节点上
+    # nodeName: minikube
+    # 可加入 container 所需的参数
+    env:
+      - name: "FOO"
+        value: "bar"
+      - name: "QUE"
+        value: "pasa"
+    # job pod 的 annotations
+    annotations:
+      key1: value1
+      key2: value2
+    # job pod 的 labels
+    labels:
+      key1: value1
+      key2: value2
+
+  # 可填写多个 flow 流程
+  # 每个 flow 中重要字段 分别为：
+  # name: flow 名称，多个 flow 名称不能重复
+  # dependencies: 定义依赖项，如果有多个依赖可以填写多个
+  # jobTemplate: job 模版，支持 k8s 原生 job spec 全部字段
+  flows:
+    - name: job1
+      dependencies: []
+      jobTemplateRef: job1-template
+    - name: job2
+      jobTemplateRef: job2-template
+      dependencies:
+        - job1  # 代表 job2 依赖 job1 完成后才开始启动
+

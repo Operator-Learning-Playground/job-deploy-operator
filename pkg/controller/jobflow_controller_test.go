@@ -63,7 +63,6 @@ func TestJobFlowController_Reconcile(t *testing.T) {
 }
 
 func createJobFlow(jobName string) *jobflowv1alpha1.JobFlow {
-
 	flows := make([]jobflowv1alpha1.Flow, 0)
 	flowTest1 := jobflowv1alpha1.Flow{
 		Name: "jobflow-test1",

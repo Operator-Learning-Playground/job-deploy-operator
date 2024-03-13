@@ -29,7 +29,8 @@ type DaemonJobController struct {
 	log    logr.Logger
 }
 
-func NewDaemonJobController(client client.Client, log logr.Logger, scheme *runtime.Scheme, event record.EventRecorder) *DaemonJobController {
+func NewDaemonJobController(client client.Client, log logr.Logger,
+	scheme *runtime.Scheme, event record.EventRecorder) *DaemonJobController {
 	return &DaemonJobController{
 		client: client,
 		log:    log,
@@ -64,27 +65,27 @@ func (r *DaemonJobController) Reconcile(ctx context.Context,
 
 	// deploy job by dependence order.
 	if err = r.deployDaemonJob(ctx, daemonJob); err != nil {
-		klog.Error("deployJob error: ", err)
+		klog.Error("deploy DaemonJob error: ", err)
 		r.event.Eventf(daemonJob, v1.EventTypeWarning, "Failed", err.Error())
 
-		return reconcile.Result{RequeueAfter: time.Second * 60}, err
+		return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 	}
 
 	// update status
-	// 修改 job 狀態，list 出所有相關的 job ，並查看其狀態，並存在 status 中
+	// 修改 job 状态，list 出所有相关的 job ，并查看其状态，存在 status 中
 	if err = r.updateJobFlowStatus(ctx, daemonJob); err != nil {
-		klog.Error("update jobFlow status error: ", err)
+		klog.Error("update DaemonJob status error: ", err)
 		r.event.Eventf(daemonJob, v1.EventTypeWarning, "Failed", err.Error())
-		return reconcile.Result{}, err
+		return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 	}
-	klog.Info("end jobFlow Reconcile........")
+	klog.Info("end DaemonJob Reconcile........")
 
 	return reconcile.Result{}, nil
 }
 
 // deployDaemonJob deploy job by dependence order.
 func (r *DaemonJobController) deployDaemonJob(ctx context.Context,
-	daemonJob *daemonjobv1alpha1.DaemonJob) error { // 创建一个空的 Node 列表对象
+	daemonJob *daemonjobv1alpha1.DaemonJob) error {
 	nodeList := &v1.NodeList{}
 	err := r.client.List(ctx, nodeList)
 	if err != nil {

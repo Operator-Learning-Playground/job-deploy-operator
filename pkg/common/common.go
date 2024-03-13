@@ -9,3 +9,11 @@ func GetWd() string {
 	}
 	return wd
 }
+
+// ex: annotation: createByJobTemplate: default.job-template-1
+
+const CreateByJobTemplate = "createByJobTemplate"
+
+func GetConnectionOfJobAndJobTemplate(namespace, name string) string {
+	return namespace + "." + name
+}

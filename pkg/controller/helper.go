@@ -3,7 +3,9 @@ package controller
 import (
 	"context"
 	"fmt"
+	jobtemplatev1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/jobTemplate/v1alpha1"
 	jobflowv1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/jobflow/v1alpha1"
+	"github.com/myoperator/jobflowoperator/pkg/common"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -13,20 +15,20 @@ import (
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"time"
 )
 
 // deploy job by dependence order.
 func (r *JobFlowController) deployJobFlow(ctx context.Context, jobFlow jobflowv1alpha1.JobFlow) error {
 	// 启动 job
-	for _, flow := range jobFlow.Spec.Flows {
-
+	for i, flow := range jobFlow.Spec.Flows {
 		jobName := getJobName(jobFlow.Name, flow.Name)
 		namespacedNameJob := types.NamespacedName{
 			Namespace: jobFlow.Namespace,
 			Name:      jobName,
 		}
 		// job 对象
-		job := prepareJob(&jobFlow, &flow, jobName)
+		job := r.prepareJob(&jobFlow, &jobFlow.Spec.Flows[i], jobName)
 
 		// 如果没拿到这个 job
 		if err := r.client.Get(ctx, namespacedNameJob, job); err != nil {
@@ -48,7 +50,6 @@ func (r *JobFlowController) deployJobFlow(ctx context.Context, jobFlow jobflowv1
 					flag := true
 					// 查看依赖的 job 是否已经完成，
 					for _, dependencyName := range flow.Dependencies {
-
 						dependencyJobName := getJobName(jobFlow.Name, dependencyName)
 						namespacedName := types.NamespacedName{
 							Namespace: jobFlow.Namespace,
@@ -72,9 +73,7 @@ func (r *JobFlowController) deployJobFlow(ctx context.Context, jobFlow jobflowv1
 						}
 
 						// 如果依赖的 job 出错，直接退出
-						if dependenciesJob.Status.Failed == 1 {
-
-							// TODO: 这里要加入出错逻辑
+						if dependenciesJob.Status.Failed == 1 { // TODO: 这里要加入出错逻辑
 							return errors.NewBadRequest(fmt.Sprintf("dependencies Job %s execute error", dependenciesJob.Name))
 						}
 					}
@@ -128,7 +127,26 @@ func (r *JobFlowController) updateJobFlowStatus(ctx context.Context, jobFlow *jo
 	return nil
 }
 
-func prepareJob(jobFlow *jobflowv1alpha1.JobFlow, flow *jobflowv1alpha1.Flow, jobName string) *batchv1.Job {
+func (r *JobFlowController) findJobTemplateByNameNamespace(name, namespace string) (batchv1.JobSpec, error) {
+	// load JobTemplate by namespace
+	jobTemplate := &jobtemplatev1alpha1.JobTemplate{}
+	time.Sleep(time.Second)
+	nn := types.NamespacedName{Name: name, Namespace: namespace}
+	err := r.client.Get(context.TODO(), nn, jobTemplate)
+	if err != nil {
+		// If no instance is found, it will be returned directly
+		if errors.IsNotFound(err) {
+			klog.Info(fmt.Sprintf("not found JobTemplate : %v", name))
+			return jobTemplate.Spec.JobTemplate, nil
+		}
+		klog.Error(err, err.Error())
+		r.event.Eventf(jobTemplate, v1.EventTypeWarning, "Created", err.Error())
+		return jobTemplate.Spec.JobTemplate, err
+	}
+	return jobTemplate.Spec.JobTemplate, nil
+}
+
+func (r *JobFlowController) prepareJob(jobFlow *jobflowv1alpha1.JobFlow, flow *jobflowv1alpha1.Flow, jobName string) *batchv1.Job {
 	// job 对象
 	job := &batchv1.Job{}
 
@@ -142,7 +160,25 @@ func prepareJob(jobFlow *jobflowv1alpha1.JobFlow, flow *jobflowv1alpha1.Flow, jo
 
 	job.Name = jobName
 	job.Namespace = jobFlow.Namespace
-	job.Spec = flow.JobTemplate
+	job.Annotations = map[string]string{}
+	job.Labels = map[string]string{}
+
+	// FIXME: 这里要判断使用 JobTemplate or JobTemplateRef
+	// 如果使用 JobTemplateRef 记得要打上 annotation 标签
+	if flow.JobTemplateRef != "" {
+		jobTemplateRefSpec, err := r.findJobTemplateByNameNamespace(flow.JobTemplateRef, jobFlow.Namespace)
+		if err != nil {
+			klog.Error("find JobTemplate failed: ", err)
+			return nil
+		}
+		job.Spec = jobTemplateRefSpec
+		// 加上 annotation 注名 此 job 使用此 JobTemplate
+		// 用于 JobTemplate 状态标记
+		job.Annotations[common.CreateByJobTemplate] =
+			common.GetConnectionOfJobAndJobTemplate(jobFlow.Namespace, flow.JobTemplateRef)
+	} else {
+		job.Spec = flow.JobTemplate
+	}
 
 	// 强制设置 job 不重启与重试次数
 	job.Spec.Template.Spec.RestartPolicy = v1.RestartPolicyNever
@@ -151,13 +187,19 @@ func prepareJob(jobFlow *jobflowv1alpha1.JobFlow, flow *jobflowv1alpha1.Flow, jo
 
 	// 加入 flow 全局参数
 	if jobFlow.Spec.GlobalParams.Annotations != nil {
-		job.Annotations = jobFlow.Spec.GlobalParams.Annotations
-		job.Spec.Template.Annotations = jobFlow.Spec.GlobalParams.Annotations
+		job.Spec.Template.Annotations = map[string]string{}
+		for key, value := range jobFlow.Spec.GlobalParams.Annotations {
+			job.Annotations[key] = value
+			job.Spec.Template.Annotations[key] = value
+		}
 	}
 
 	if jobFlow.Spec.GlobalParams.Labels != nil {
-		job.Labels = jobFlow.Spec.GlobalParams.Labels
-		job.Spec.Template.Labels = jobFlow.Spec.GlobalParams.Labels
+		job.Spec.Template.Labels = map[string]string{}
+		for key, value := range jobFlow.Spec.GlobalParams.Labels {
+			job.Labels[key] = value
+			job.Spec.Template.Labels[key] = value
+		}
 	}
 
 	if jobFlow.Spec.GlobalParams.NodeName != "" {

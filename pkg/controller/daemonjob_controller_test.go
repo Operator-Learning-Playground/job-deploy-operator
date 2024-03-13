@@ -66,7 +66,6 @@ func TestDaemonJobController_Reconcile(t *testing.T) {
 }
 
 func createDaemonJob(jobName string) *daemonjobv1alpha1.DaemonJob {
-
 	daemonjob := &daemonjobv1alpha1.DaemonJob{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jobName,

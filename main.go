@@ -2,6 +2,7 @@ package main
 
 import (
 	daemonjobv1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/daemonjob/v1alpha1"
+	jobtemplatev1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/jobTemplate/v1alpha1"
 	jobflowv1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/jobflow/v1alpha1"
 	"github.com/myoperator/jobflowoperator/pkg/controller"
 	"github.com/myoperator/jobflowoperator/pkg/k8sconfig"
@@ -49,7 +50,6 @@ import (
 */
 
 func main() {
-
 	logf.SetLogger(zap.New())
 	var d time.Duration = 0
 	// 1. 管理器初始化
@@ -70,6 +70,12 @@ func main() {
 	}
 
 	err = daemonjobv1alpha1.SchemeBuilder.AddToScheme(mgr.GetScheme())
+	if err != nil {
+		klog.Error(err, "unable add schema")
+		os.Exit(1)
+	}
+
+	err = jobtemplatev1alpha1.SchemeBuilder.AddToScheme(mgr.GetScheme())
 	if err != nil {
 		klog.Error(err, "unable add schema")
 		os.Exit(1)
@@ -98,6 +104,20 @@ func main() {
 				DeleteFunc: daemonJobCtl.OnDeleteJobHandlerByDaemonJob,
 			},
 		).Complete(daemonJobCtl)
+
+	// 3. 控制器相关
+	jobTemplateCtl := controller.NewJobTemplateController(mgr.GetClient(), mgr.GetLogger(),
+		mgr.GetScheme(), mgr.GetEventRecorderFor("JobTemplate operator"))
+
+	err = builder.ControllerManagedBy(mgr).For(&jobtemplatev1alpha1.JobTemplate{}).
+		Watches(&source.Kind{Type: &batchv1.Job{}},
+			handler.Funcs{
+				CreateFunc: jobTemplateCtl.JobCreateTemplateHandler,
+				UpdateFunc: jobTemplateCtl.JobUpdateTemplateHandler,
+				DeleteFunc: jobTemplateCtl.JobDeleteTemplateHandler,
+			},
+		).
+		Complete(jobTemplateCtl)
 
 	errC := make(chan error)
 

@@ -22,7 +22,8 @@ type JobFlowController struct {
 	log    logr.Logger
 }
 
-func NewJobFlowController(client client.Client, log logr.Logger, scheme *runtime.Scheme, event record.EventRecorder) *JobFlowController {
+func NewJobFlowController(client client.Client, log logr.Logger,
+	scheme *runtime.Scheme, event record.EventRecorder) *JobFlowController {
 	return &JobFlowController{
 		client: client,
 		log:    log,
@@ -33,7 +34,6 @@ func NewJobFlowController(client client.Client, log logr.Logger, scheme *runtime
 
 // Reconcile 调协 loop
 func (r *JobFlowController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-
 	klog.Info("start jobFlow Reconcile..........")
 
 	// load JobFlow by namespace
@@ -48,7 +48,7 @@ func (r *JobFlowController) Reconcile(ctx context.Context, req reconcile.Request
 		}
 		klog.Error(err, err.Error())
 		r.event.Eventf(jobFlow, v1.EventTypeWarning, "Created", err.Error())
-		return reconcile.Result{}, err
+		return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 	}
 
 	if jobFlow.Status.State == jobflowv1alpha1.Failed {
@@ -66,16 +66,16 @@ func (r *JobFlowController) Reconcile(ctx context.Context, req reconcile.Request
 		if errors.IsBadRequest(err) {
 			goto continueExecution
 		}
-		return reconcile.Result{RequeueAfter: time.Second * 60}, err
+		return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 	}
 
 continueExecution:
 	// update status
-	// 修改 job 狀態，list 出所有相關的 job ，並查看其狀態，並存在 status 中
+	// 修改 job 状态，list 出所有相关的 job ，並查看其状态，並存在 status 中
 	if err = r.updateJobFlowStatus(ctx, jobFlow); err != nil {
 		klog.Error("update jobFlow status error: ", err)
 		r.event.Eventf(jobFlow, v1.EventTypeWarning, "Failed", err.Error())
-		return reconcile.Result{}, err
+		return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 	}
 	klog.Info("end jobFlow Reconcile........")
 

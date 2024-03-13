@@ -51,10 +51,12 @@ type ErrorHandler struct {
 }
 
 type Flow struct {
-	// job name, namespace 就是默认 JobFlow namespace
+	// Name job name, namespace 就是默认 JobFlow namespace
 	Name string `json:"name"`
-	// 用于赋值 job 模版
+	// JobTemplate 用于赋值 job 模版
 	JobTemplate v1.JobSpec `json:"jobTemplate,omitempty"`
+	// JobTemplateRef 模版实例对象 JobTemplate
+	JobTemplateRef string `json:"jobTemplateRef,omitempty"`
 	// Dependencies 依赖项，其中可以填写多个 依赖的 job name
 	// ex: 如果 job3 依赖 job1 and job2, 就能
 	Dependencies []string `json:"dependencies"`
