@@ -15,6 +15,7 @@
     - name: flow 名称，多个 flow 名称不能重复
     - dependencies: 定义依赖项，如果有多个依赖可以填写多个
     - jobTemplate: job 模版，支持 k8s 原生 job spec 全部字段
+    - jobTemplateRef: job 模版实例，支持 k8s 原生 job spec 全部字段, 需要填入 JobTemplate 名
 ```yaml
 apiVersion: api.practice.com/v1alpha1
 kind: JobFlow
@@ -119,6 +120,72 @@ spec:
                 name: nginx
 ```
 
+```yaml
+apiVersion: api.practice.com/v1alpha1
+kind: JobTemplate
+metadata:
+  name: job1-template
+spec:
+  jobTemplate:
+    template:
+      spec:
+        containers:
+          - image: busybox:1.28
+            command:
+              - sh
+              - -c
+              - sleep 10s
+            imagePullPolicy: IfNotPresent
+            name: nginx
+---
+apiVersion: api.practice.com/v1alpha1
+kind: JobTemplate
+metadata:
+  name: job2-template
+spec:
+  jobTemplate:
+    template:
+      spec:
+        containers:
+          - image: busybox:1.28
+            command:
+              - sh
+              - -c
+              - sleep 10s
+            imagePullPolicy: IfNotPresent
+            name: nginx
+---
+apiVersion: api.practice.com/v1alpha1
+kind: JobFlow
+metadata:
+  name: jobflow-example-template
+spec:
+  # 可配置任务流中的全局参数，当设置后会在每个 job 与 pod 中都生效
+  globalParams:
+    env:
+      - name: "FOO"
+        value: "bar"
+      - name: "QUE"
+        value: "pasa"
+    # job pod 的 annotations
+    annotations:
+      key1: value1
+      key2: value2
+    # job pod 的 labels
+    labels:
+      key1: value1
+      key2: value2
+  flows:
+    - name: job1
+      dependencies: []
+      # JobTemplate 实例名
+      jobTemplateRef: job1-template
+    - name: job2
+      jobTemplateRef: job2-template
+      dependencies:
+        - job1  # 代表 job2 依赖 job1 完成后才开始启动
+```
+
 ### 项目功能
 1. 支持 JobFlow 任务中的 job 依赖执行
 2. 查看任务流状态
@@ -147,6 +214,7 @@ jobflow-example-job4-7ngpd                         0/1     Completed   0        
 jobflow-example-job5-m8cwg                         0/1     Completed   0          72s
 ```
 - 注：pod 字段中的 **restartPolicy**  不允许被使用，就算定义后也不会生效(都会被强制设为"Never")
+- 注：jobTemplate or jobTemplateRef 选其一，推荐使用 jobTemplateRef，可以减少配置复杂性
 
 
 ### DaemonJob
