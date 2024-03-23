@@ -72,7 +72,8 @@ func (r *JobTemplateController) Reconcile(ctx context.Context,
 
 // update status
 func (r *JobTemplateController) updateJobTemplateStatus(ctx context.Context, jobTemplate *jobtemplatev1alpha1.JobTemplate) error {
-	klog.Info(fmt.Sprintf("start to update JobTemplate status! JobTemplateName: %v, JobTemplateNamespace: %v ", jobTemplate.Name, jobTemplate.Namespace))
+	klog.Info(fmt.Sprintf("start to update JobTemplate status! JobTemplateName: %v, "+
+		"JobTemplateNamespace: %v ", jobTemplate.Name, jobTemplate.Namespace))
 	// 获取 job 列表
 	allJobList := new(batchv1.JobList)
 	err := r.client.List(ctx, allJobList)

@@ -34,8 +34,7 @@ func TestJobTemplateController_Reconcile(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// 过两秒后更新 job1 状态
-		select {
-		case <-time.After(time.Second * 2):
+		if <-time.After(time.Second * 2); true {
 			jobtemplate.Status = jobtemplatev1alpha1.JobTemplateStatus{}
 			reconcileController.client.Status().Update(context.TODO(), jobtemplate)
 		}
@@ -60,7 +59,6 @@ func createJobTemplateController(initObjs ...client.Object) *JobTemplateControll
 }
 
 func createJobTemplate(jobTemplateName string) *jobtemplatev1alpha1.JobTemplate {
-
 	jobTemplate := &jobtemplatev1alpha1.JobTemplate{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jobTemplateName,

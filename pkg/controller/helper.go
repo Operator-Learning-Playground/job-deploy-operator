@@ -207,7 +207,7 @@ func (r *JobFlowController) prepareJob(jobFlow *jobflowv1alpha1.JobFlow, flow *j
 	}
 
 	if jobFlow.Spec.GlobalParams.Env != nil {
-		for k, _ := range job.Spec.Template.Spec.Containers {
+		for k := range job.Spec.Template.Spec.Containers {
 			job.Spec.Template.Spec.Containers[k].Env = jobFlow.Spec.GlobalParams.Env
 		}
 	}
@@ -259,11 +259,12 @@ func getAllJobStatus(jobFlow *jobflowv1alpha1.JobFlow, allJobList *batchv1.JobLi
 		jobFlowStatus.State = jobflowv1alpha1.Terminating
 	} else {
 		if len(jobList) != len(completedJobs) {
-			if len(failedJobs) > 0 {
+			switch {
+			case len(failedJobs) > 0:
 				jobFlowStatus.State = jobflowv1alpha1.Failed
-			} else if len(runningJobs) > 0 || len(completedJobs) > 0 {
+			case len(runningJobs) > 0 || len(completedJobs) > 0:
 				jobFlowStatus.State = jobflowv1alpha1.Running
-			} else {
+			default:
 				jobFlowStatus.State = jobflowv1alpha1.Pending
 			}
 		} else {
@@ -277,7 +278,6 @@ func getAllJobStatus(jobFlow *jobflowv1alpha1.JobFlow, allJobList *batchv1.JobLi
 func (r *JobFlowController) OnUpdateJobHandlerByJobFlow(event event.UpdateEvent, limitingInterface workqueue.RateLimitingInterface) {
 	for _, ref := range event.ObjectNew.GetOwnerReferences() {
 		if ref.Kind == jobflowv1alpha1.JobFlowKind && ref.APIVersion == jobflowv1alpha1.JobFlowApiVersion {
-			// 重新放入 Reconcile 调协方法
 			limitingInterface.Add(reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name: ref.Name, Namespace: event.ObjectNew.GetNamespace(),
@@ -290,8 +290,6 @@ func (r *JobFlowController) OnUpdateJobHandlerByJobFlow(event event.UpdateEvent,
 func (r *JobFlowController) OnDeleteJobHandlerByJobFlow(event event.DeleteEvent, limitingInterface workqueue.RateLimitingInterface) {
 	for _, ref := range event.Object.GetOwnerReferences() {
 		if ref.Kind == jobflowv1alpha1.JobFlowKind && ref.APIVersion == jobflowv1alpha1.JobFlowApiVersion {
-			// 重新入列
-			klog.Info("delete pod: ", event.Object.GetName(), event.Object.GetObjectKind())
 			limitingInterface.Add(reconcile.Request{
 				NamespacedName: types.NamespacedName{Name: ref.Name,
 					Namespace: event.Object.GetNamespace()}})

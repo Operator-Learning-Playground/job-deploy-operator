@@ -26,7 +26,8 @@ func createJobFlowController(initObjs ...client.Object) *JobFlowController {
 	utilruntime.Must(jobflowv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(v1.AddToScheme(scheme))
 	utilruntime.Must(batchv1.AddToScheme(scheme))
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjs...).Build()
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).
+		WithObjects(initObjs...).Build()
 	eventBroadcaster := record.NewBroadcaster()
 	recorder := eventBroadcaster.NewRecorder(scheme, v1.EventSource{Component: "jobflow-controller"})
 
@@ -55,7 +56,10 @@ func TestJobFlowController_Reconcile(t *testing.T) {
 			job1.Status = batchv1.JobStatus{
 				Succeeded: 1,
 			}
-			reconcileController.client.Status().Update(context.TODO(), job1)
+			err := reconcileController.client.Status().Update(context.TODO(), job1)
+			if err != nil {
+				return
+			}
 		}
 		_, err = reconcileController.Reconcile(context.TODO(), request)
 		So(err, ShouldBeNil)
