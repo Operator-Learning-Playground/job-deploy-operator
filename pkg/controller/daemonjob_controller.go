@@ -3,8 +3,11 @@ package controller
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
+	"time"
+
 	"github.com/go-logr/logr"
-	daemonjobv1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/daemonjob/v1alpha1"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -17,9 +20,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sort"
-	"strings"
-	"time"
+
+	daemonjobv1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/daemonjob/v1alpha1"
 )
 
 type DaemonJobController struct {
@@ -54,7 +56,7 @@ func (r *DaemonJobController) Reconcile(ctx context.Context,
 			klog.Info(fmt.Sprintf("not found daemonJob : %v", req.Name))
 			return reconcile.Result{}, nil
 		}
-		klog.Error(err, err.Error())
+		klog.Error("get DaemonJob error: ", err.Error())
 		r.event.Eventf(daemonJob, v1.EventTypeWarning, "Created", err.Error())
 		return reconcile.Result{}, err
 	}
@@ -67,7 +69,6 @@ func (r *DaemonJobController) Reconcile(ctx context.Context,
 	if err = r.deployDaemonJob(ctx, daemonJob); err != nil {
 		klog.Error("deploy DaemonJob error: ", err)
 		r.event.Eventf(daemonJob, v1.EventTypeWarning, "Failed", err.Error())
-
 		return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 	}
 
@@ -99,7 +100,7 @@ func (r *DaemonJobController) deployDaemonJob(ctx context.Context,
 		}
 
 		// 其他节点：先 get 一下，如果不存在则创建，若存在就不处理
-
+		// job 对象
 		job := prepareJobFromDaemonJob(daemonJob, daemonJob.Name, v.Name)
 		namespacedNameJob := types.NamespacedName{
 			Namespace: daemonJob.Namespace,

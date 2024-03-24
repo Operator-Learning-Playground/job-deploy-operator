@@ -2,8 +2,10 @@ package controller
 
 import (
 	"context"
-	jobtemplatev1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/jobTemplate/v1alpha1"
-	. "github.com/smartystreets/goconvey/convey"
+	"testing"
+	"time"
+
+	"github.com/smartystreets/goconvey/convey"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,12 +18,12 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"testing"
-	"time"
+
+	jobtemplatev1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/jobTemplate/v1alpha1"
 )
 
 func TestJobTemplateController_Reconcile(t *testing.T) {
-	Convey("Test JobFlow Reconcile", t, func() {
+	convey.Convey("Test JobFlow Reconcile", t, func() {
 		jobtemplate := createJobTemplate("jobtemplate-test")
 		reconcileController := createJobTemplateController(jobtemplate)
 		request := reconcile.Request{
@@ -31,15 +33,16 @@ func TestJobTemplateController_Reconcile(t *testing.T) {
 			},
 		}
 		_, err := reconcileController.Reconcile(context.TODO(), request)
-		So(err, ShouldBeNil)
+		convey.So(err, convey.ShouldBeNil)
 
 		// 过两秒后更新 job1 状态
 		if <-time.After(time.Second * 2); true {
 			jobtemplate.Status = jobtemplatev1alpha1.JobTemplateStatus{}
-			reconcileController.client.Status().Update(context.TODO(), jobtemplate)
+			err = reconcileController.client.Status().Update(context.TODO(), jobtemplate)
+			convey.So(err, convey.ShouldBeNil)
 		}
 		_, err = reconcileController.Reconcile(context.TODO(), request)
-		So(err, ShouldBeNil)
+		convey.So(err, convey.ShouldBeNil)
 	})
 }
 

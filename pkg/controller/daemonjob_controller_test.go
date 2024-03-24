@@ -2,9 +2,10 @@ package controller
 
 import (
 	"context"
-	daemonjobv1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/daemonjob/v1alpha1"
-	jobflowv1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/jobflow/v1alpha1"
-	. "github.com/smartystreets/goconvey/convey"
+	"testing"
+	"time"
+
+	"github.com/smartystreets/goconvey/convey"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,8 +18,9 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"testing"
-	"time"
+
+	daemonjobv1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/daemonjob/v1alpha1"
+	jobflowv1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/jobflow/v1alpha1"
 )
 
 func createDaemonJobController(initObjs ...client.Object) *DaemonJobController {
@@ -36,7 +38,7 @@ func createDaemonJobController(initObjs ...client.Object) *DaemonJobController {
 }
 
 func TestDaemonJobController_Reconcile(t *testing.T) {
-	Convey("Test DaemonJob Reconcile", t, func() {
+	convey.Convey("Test DaemonJob Reconcile", t, func() {
 		node1 := createNode("node1")
 		node2 := createNode("node2")
 		node3 := createNode("node3")
@@ -49,7 +51,7 @@ func TestDaemonJobController_Reconcile(t *testing.T) {
 			},
 		}
 		_, err := reconcileController.Reconcile(context.TODO(), request)
-		So(err, ShouldBeNil)
+		convey.So(err, convey.ShouldBeNil)
 
 		job1 := newJobFromDaemonJob(daemonjob, "daemonjob-test-node1")
 		// 过两秒后更新 job1 状态
@@ -58,10 +60,11 @@ func TestDaemonJobController_Reconcile(t *testing.T) {
 			job1.Status = batchv1.JobStatus{
 				Succeeded: 1,
 			}
-			reconcileController.client.Status().Update(context.TODO(), job1)
+			err = reconcileController.client.Status().Update(context.TODO(), job1)
+			convey.So(err, convey.ShouldBeNil)
 		}
 		_, err = reconcileController.Reconcile(context.TODO(), request)
-		So(err, ShouldBeNil)
+		convey.So(err, convey.ShouldBeNil)
 	})
 }
 

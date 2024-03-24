@@ -2,8 +2,10 @@ package controller
 
 import (
 	"context"
-	jobflowv1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/jobflow/v1alpha1"
-	. "github.com/smartystreets/goconvey/convey"
+	"testing"
+	"time"
+
+	"github.com/smartystreets/goconvey/convey"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,8 +18,8 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"testing"
-	"time"
+
+	jobflowv1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/jobflow/v1alpha1"
 )
 
 func createJobFlowController(initObjs ...client.Object) *JobFlowController {
@@ -37,7 +39,7 @@ func createJobFlowController(initObjs ...client.Object) *JobFlowController {
 }
 
 func TestJobFlowController_Reconcile(t *testing.T) {
-	Convey("Test JobFlow Reconcile", t, func() {
+	convey.Convey("Test JobFlow Reconcile", t, func() {
 		jobflow := createJobFlow("jobflow-test")
 		reconcileController := createJobFlowController(jobflow)
 		request := reconcile.Request{
@@ -47,22 +49,19 @@ func TestJobFlowController_Reconcile(t *testing.T) {
 			},
 		}
 		_, err := reconcileController.Reconcile(context.TODO(), request)
-		So(err, ShouldBeNil)
+		convey.So(err, convey.ShouldBeNil)
 
 		job1 := newJob(jobflow, "jobflow-test-jobflow-test1")
 		// 过两秒后更新 job1 状态
-		select {
-		case <-time.After(time.Second * 2):
+		if <-time.After(time.Second * 2); true {
 			job1.Status = batchv1.JobStatus{
 				Succeeded: 1,
 			}
-			err := reconcileController.client.Status().Update(context.TODO(), job1)
-			if err != nil {
-				return
-			}
+			err = reconcileController.client.Status().Update(context.TODO(), job1)
+			convey.So(err, convey.ShouldBeNil)
 		}
 		_, err = reconcileController.Reconcile(context.TODO(), request)
-		So(err, ShouldBeNil)
+		convey.So(err, convey.ShouldBeNil)
 	})
 }
 
@@ -109,6 +108,20 @@ func createJobFlow(jobName string) *jobflowv1alpha1.JobFlow {
 			UID:       "12345",
 		},
 		Spec: jobflowv1alpha1.JobFlowSpec{
+			GlobalParams: jobflowv1alpha1.GlobalParams{
+				Labels: map[string]string{
+					"key": "value",
+				},
+				Annotations: map[string]string{
+					"key": "value",
+				},
+				Env: []v1.EnvVar{
+					{
+						Name:  "test",
+						Value: "test",
+					},
+				},
+			},
 			Flows: flows,
 		},
 	}

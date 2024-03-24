@@ -3,8 +3,8 @@ package controller
 import (
 	"context"
 	"fmt"
-	jobtemplatev1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/jobTemplate/v1alpha1"
-	jobflowv1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/jobflow/v1alpha1"
+	"time"
+
 	"github.com/myoperator/jobflowoperator/pkg/common"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
@@ -15,7 +15,9 @@ import (
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"time"
+
+	jobtemplatev1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/jobTemplate/v1alpha1"
+	jobflowv1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/jobflow/v1alpha1"
 )
 
 // deploy job by dependence order.
@@ -28,7 +30,10 @@ func (r *JobFlowController) deployJobFlow(ctx context.Context, jobFlow jobflowv1
 			Name:      jobName,
 		}
 		// job 对象
-		job := r.prepareJob(&jobFlow, &jobFlow.Spec.Flows[i], jobName)
+		job, err := r.prepareJob(&jobFlow, &jobFlow.Spec.Flows[i], jobName)
+		if err != nil {
+			return err
+		}
 
 		// 如果没拿到这个 job
 		if err := r.client.Get(ctx, namespacedNameJob, job); err != nil {
@@ -136,17 +141,16 @@ func (r *JobFlowController) findJobTemplateByNameNamespace(name, namespace strin
 	if err != nil {
 		// If no instance is found, it will be returned directly
 		if errors.IsNotFound(err) {
-			klog.Info(fmt.Sprintf("not found JobTemplate : %v", name))
-			return jobTemplate.Spec.JobTemplate, nil
+			klog.Error(fmt.Sprintf("not found JobTemplate : %v", name))
+			return jobTemplate.Spec.JobTemplate, errors.NewBadRequest(fmt.Sprintf("not found JobTemplate : %v", name))
 		}
-		klog.Error(err, err.Error())
-		r.event.Eventf(jobTemplate, v1.EventTypeWarning, "Created", err.Error())
+		klog.Error("get JobTemplate error: ", err.Error())
 		return jobTemplate.Spec.JobTemplate, err
 	}
 	return jobTemplate.Spec.JobTemplate, nil
 }
 
-func (r *JobFlowController) prepareJob(jobFlow *jobflowv1alpha1.JobFlow, flow *jobflowv1alpha1.Flow, jobName string) *batchv1.Job {
+func (r *JobFlowController) prepareJob(jobFlow *jobflowv1alpha1.JobFlow, flow *jobflowv1alpha1.Flow, jobName string) (*batchv1.Job, error) {
 	// job 对象
 	job := &batchv1.Job{}
 
@@ -169,7 +173,7 @@ func (r *JobFlowController) prepareJob(jobFlow *jobflowv1alpha1.JobFlow, flow *j
 		jobTemplateRefSpec, err := r.findJobTemplateByNameNamespace(flow.JobTemplateRef, jobFlow.Namespace)
 		if err != nil {
 			klog.Error("find JobTemplate failed: ", err)
-			return nil
+			return nil, err
 		}
 		job.Spec = jobTemplateRefSpec
 		// 加上 annotation 注名 此 job 使用此 JobTemplate
@@ -212,7 +216,7 @@ func (r *JobFlowController) prepareJob(jobFlow *jobflowv1alpha1.JobFlow, flow *j
 		}
 	}
 
-	return job
+	return job, nil
 }
 
 // getAllJobStatus 记录 Job Status
