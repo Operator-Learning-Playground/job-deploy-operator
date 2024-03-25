@@ -44,8 +44,12 @@ type GlobalParams struct {
 type ErrorHandler struct {
 	// 用于赋值 job 模版
 	corev1.PodSpec
-
+	// JobTemplate 用于赋值 job 模版
 	JobTemplate v1.JobSpec `json:"jobTemplate,omitempty"`
+	// JobTemplateRef 模版实例对象 JobTemplate
+	// 如果 JobTemplateRef 不为空，会优先使用此对象，
+	// 自动忽略 JobTemplate 字段内容
+	JobTemplateRef string `json:"jobTemplateRef,omitempty"`
 	// 支持脚本命令
 	Script string `json:"script,omitempty"`
 }
@@ -56,9 +60,11 @@ type Flow struct {
 	// JobTemplate 用于赋值 job 模版
 	JobTemplate v1.JobSpec `json:"jobTemplate,omitempty"`
 	// JobTemplateRef 模版实例对象 JobTemplate
+	// 如果 JobTemplateRef 不为空，会优先使用此对象，
+	// 自动忽略 JobTemplate 字段内容
 	JobTemplateRef string `json:"jobTemplateRef,omitempty"`
 	// Dependencies 依赖项，其中可以填写多个 依赖的 job name
-	// ex: 如果 job3 依赖 job1 and job2, 就能
+	// ex: 如果 job3 依赖 job1 and job2, 就在列表中放入 ["job1", "job2"]
 	Dependencies []string `json:"dependencies"`
 }
 
@@ -66,6 +72,7 @@ type JobFlowStatus struct {
 	// 用于存储 map 是 name/namespace 进行存储
 	JobStatusList map[string]v1.JobStatus `json:"jobStatusList,omitempty"`
 	// 记录 JobFlow 状态
+	// TODO: 使用特定类型封装
 	State string `json:"state,omitempty"`
 }
 

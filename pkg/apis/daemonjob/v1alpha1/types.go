@@ -21,9 +21,11 @@ type DaemonJob struct {
 }
 
 type DaemonJobSpec struct {
-	// GlobalParameters 全局参数
-	GlobalParams    GlobalParams `json:"globalParams,omitempty"`
-	ExcludeNodeList string       `json:"excludeNodeList,omitempty"`
+	// GlobalParams 全局参数
+	GlobalParams GlobalParams `json:"globalParams,omitempty"`
+	// ExcludeNodeList 过滤出不需运行的 node List, ex: 如果 node3 node4 不需要
+	// 运行 DaemonJob ，则填入： "node3,node4"
+	ExcludeNodeList string `json:"excludeNodeList,omitempty"`
 	v1.JobSpec
 }
 
@@ -43,6 +45,7 @@ type DaemonJobStatus struct {
 	// 用于存储 map 是 name/namespace 进行存储
 	JobStatusList map[string]v1.JobStatus `json:"jobStatusList,omitempty"`
 	// 记录 JobFlow 状态
+	// TODO: 使用特定类型封装
 	State string `json:"state,omitempty"`
 }
 
