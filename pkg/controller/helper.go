@@ -65,7 +65,7 @@ func (r *JobFlowController) deployJobFlow(ctx context.Context, jobFlow jobflowv1
 						if err = r.client.Get(ctx, namespacedName, dependenciesJob); err != nil {
 							if err != nil {
 								if errors.IsNotFound(err) {
-									klog.Info(fmt.Sprintf("No %v Job found！", namespacedName.Name))
+									klog.V(2).Info(fmt.Sprintf("No %v Job found！", namespacedName.Name))
 									flag = false
 									break
 								}
@@ -107,7 +107,7 @@ func getJobName(jobFlowName string, jobTemplateName string) string {
 
 // update status
 func (r *JobFlowController) updateJobFlowStatus(ctx context.Context, jobFlow *jobflowv1alpha1.JobFlow) error {
-	klog.Info(fmt.Sprintf("start to update jobFlow status! jobFlowName: %v, jobFlowNamespace: %v ", jobFlow.Name, jobFlow.Namespace))
+	klog.V(2).Info(fmt.Sprintf("start to update jobFlow status! jobFlowName: %v, jobFlowNamespace: %v ", jobFlow.Name, jobFlow.Namespace))
 	// 获取 job 列表
 	allJobList := new(batchv1.JobList)
 	err := r.client.List(ctx, allJobList)
@@ -282,6 +282,7 @@ func getAllJobStatus(jobFlow *jobflowv1alpha1.JobFlow, allJobList *batchv1.JobLi
 func (r *JobFlowController) OnUpdateJobHandlerByJobFlow(event event.UpdateEvent, limitingInterface workqueue.RateLimitingInterface) {
 	for _, ref := range event.ObjectNew.GetOwnerReferences() {
 		if ref.Kind == jobflowv1alpha1.JobFlowKind && ref.APIVersion == jobflowv1alpha1.JobFlowApiVersion {
+			klog.V(5).Info("update job: ", event.ObjectNew.GetName(), event.ObjectNew.GetObjectKind())
 			limitingInterface.Add(reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name: ref.Name, Namespace: event.ObjectNew.GetNamespace(),
@@ -294,6 +295,7 @@ func (r *JobFlowController) OnUpdateJobHandlerByJobFlow(event event.UpdateEvent,
 func (r *JobFlowController) OnDeleteJobHandlerByJobFlow(event event.DeleteEvent, limitingInterface workqueue.RateLimitingInterface) {
 	for _, ref := range event.Object.GetOwnerReferences() {
 		if ref.Kind == jobflowv1alpha1.JobFlowKind && ref.APIVersion == jobflowv1alpha1.JobFlowApiVersion {
+			klog.V(5).Info("delete job: ", event.Object.GetName(), event.Object.GetObjectKind())
 			limitingInterface.Add(reconcile.Request{
 				NamespacedName: types.NamespacedName{Name: ref.Name,
 					Namespace: event.Object.GetNamespace()}})

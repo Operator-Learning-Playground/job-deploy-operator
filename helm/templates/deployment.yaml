@@ -20,6 +20,8 @@ spec:
         - name: {{ .Values.base.name }}
           image: {{ .Values.base.image }}
           imagePullPolicy: IfNotPresent
+          args:
+            - --v=2   # 日志等级
           env:
             - name: "Release"
               value: "1"

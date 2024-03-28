@@ -19,6 +19,8 @@ spec:
         - name: jobflowoperator # 控制器镜像
           image: jobflowoperator:v1
           imagePullPolicy: IfNotPresent
+          args:
+            - --v=2   # 日志等级
           env:
             - name: "Release"
               value: "1"

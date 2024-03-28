@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	daemonjobv1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/daemonjob/v1alpha1"
 	jobtemplatev1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/jobTemplate/v1alpha1"
 	jobflowv1alpha1 "github.com/myoperator/jobflowoperator/pkg/apis/jobflow/v1alpha1"
@@ -49,8 +50,15 @@ import (
 	operator = crd + controller + webhook
 */
 
-func main() {
+func init() {
+	klog.InitFlags(nil) // initializing the flags
+	defer klog.Flush()
+	flag.Parse() // parses the command-line flags
 	logf.SetLogger(zap.New())
+}
+
+func main() {
+
 	var d time.Duration = 0
 	// 1. 管理器初始化
 	mgr, err := manager.New(k8sconfig.K8sRestConfig(), manager.Options{

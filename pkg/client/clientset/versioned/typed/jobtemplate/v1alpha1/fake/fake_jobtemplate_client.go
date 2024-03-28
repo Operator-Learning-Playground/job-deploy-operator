@@ -28,7 +28,7 @@ type FakeApiV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeApiV1alpha1) JobFlows(namespace string) v1alpha1.JobTemplateInterface {
+func (c *FakeApiV1alpha1) JobTemplates(namespace string) v1alpha1.JobTemplateInterface {
 	return &FakeJobTemplates{c, namespace}
 }
 

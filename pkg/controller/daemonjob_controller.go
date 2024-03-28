@@ -44,7 +44,7 @@ func NewDaemonJobController(client client.Client, log logr.Logger,
 // Reconcile 调协 loop
 func (r *DaemonJobController) Reconcile(ctx context.Context,
 	req reconcile.Request) (reconcile.Result, error) {
-	klog.Info("start DaemonJob Reconcile..........")
+	klog.V(2).Info("start DaemonJob Reconcile..........")
 
 	// load JobFlow by namespace
 	daemonJob := &daemonjobv1alpha1.DaemonJob{}
@@ -53,7 +53,7 @@ func (r *DaemonJobController) Reconcile(ctx context.Context,
 	if err != nil {
 		// If no instance is found, it will be returned directly
 		if errors.IsNotFound(err) {
-			klog.Info(fmt.Sprintf("not found daemonJob : %v", req.Name))
+			klog.V(2).Info(fmt.Sprintf("not found daemonJob : %v", req.Name))
 			return reconcile.Result{}, nil
 		}
 		klog.Error("get DaemonJob error: ", err.Error())
@@ -79,7 +79,7 @@ func (r *DaemonJobController) Reconcile(ctx context.Context,
 		r.event.Eventf(daemonJob, v1.EventTypeWarning, "Failed", err.Error())
 		return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 	}
-	klog.Info("end DaemonJob Reconcile........")
+	klog.V(2).Info("end DaemonJob Reconcile........")
 
 	return reconcile.Result{}, nil
 }
@@ -186,7 +186,7 @@ func prepareJobFromDaemonJob(daemonJob *daemonjobv1alpha1.DaemonJob, jobName, no
 
 // update status
 func (r *DaemonJobController) updateJobFlowStatus(ctx context.Context, daemonJob *daemonjobv1alpha1.DaemonJob) error {
-	klog.Info(fmt.Sprintf("start to update daemonJob status! daemonJobName: %v, daemonJobNamespace: %v ", daemonJob.Name, daemonJob.Namespace))
+	klog.V(2).Info(fmt.Sprintf("start to update daemonJob status! daemonJobName: %v, daemonJobNamespace: %v ", daemonJob.Name, daemonJob.Namespace))
 	// 获取 job 列表
 	allJobList := new(batchv1.JobList)
 	err := r.client.List(ctx, allJobList)
@@ -284,6 +284,7 @@ func (r *DaemonJobController) OnUpdateJobHandlerByDaemonJob(event event.UpdateEv
 	for _, ref := range event.ObjectNew.GetOwnerReferences() {
 		if ref.Kind == daemonjobv1alpha1.DaemonJobKind && ref.APIVersion == daemonjobv1alpha1.DaemonJobApiVersion {
 			// 重新放入 Reconcile 调协方法
+			klog.V(5).Info("update job: ", event.ObjectNew.GetName(), event.ObjectNew.GetObjectKind())
 			limitingInterface.Add(reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name: ref.Name, Namespace: event.ObjectNew.GetNamespace(),
@@ -297,7 +298,7 @@ func (r *DaemonJobController) OnDeleteJobHandlerByDaemonJob(event event.DeleteEv
 	for _, ref := range event.Object.GetOwnerReferences() {
 		if ref.Kind == daemonjobv1alpha1.DaemonJobKind && ref.APIVersion == daemonjobv1alpha1.DaemonJobApiVersion {
 			// 重新入列
-			klog.Info("delete pod: ", event.Object.GetName(), event.Object.GetObjectKind())
+			klog.V(5).Info("delete job: ", event.Object.GetName(), event.Object.GetObjectKind())
 			limitingInterface.Add(reconcile.Request{
 				NamespacedName: types.NamespacedName{Name: ref.Name,
 					Namespace: event.Object.GetNamespace()}})

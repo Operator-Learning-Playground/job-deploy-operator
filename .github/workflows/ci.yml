@@ -29,6 +29,5 @@ jobs:
           GO111MODULE: auto
       - name: Run unit test
         run: go test -v ./pkg/controller
-# bug fix: go build
       - name: Build the project
         run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o jobflowoperator main.go

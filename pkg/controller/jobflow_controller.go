@@ -36,7 +36,7 @@ func NewJobFlowController(client client.Client, log logr.Logger,
 
 // Reconcile 调协 loop
 func (r *JobFlowController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	klog.Info("start jobFlow Reconcile..........")
+	klog.V(2).Info("start jobFlow Reconcile..........")
 
 	// load JobFlow by namespace
 	jobFlow := &jobflowv1alpha1.JobFlow{}
@@ -45,7 +45,7 @@ func (r *JobFlowController) Reconcile(ctx context.Context, req reconcile.Request
 	if err != nil {
 		// If no instance is found, it will be returned directly
 		if errors.IsNotFound(err) {
-			klog.Info(fmt.Sprintf("not found jobFlow : %v", req.Name))
+			klog.V(2).Info(fmt.Sprintf("not found jobFlow : %v", req.Name))
 			return reconcile.Result{}, nil
 		}
 		klog.Error(err, err.Error())
@@ -79,7 +79,7 @@ continueExecution:
 		r.event.Eventf(jobFlow, v1.EventTypeWarning, "Failed", err.Error())
 		return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 	}
-	klog.Info("end jobFlow Reconcile........")
+	klog.V(2).Info("end jobFlow Reconcile........")
 
 	return reconcile.Result{}, nil
 }

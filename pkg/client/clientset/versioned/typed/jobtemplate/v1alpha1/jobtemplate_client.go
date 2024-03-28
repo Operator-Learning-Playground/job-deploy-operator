@@ -34,7 +34,7 @@ type ApiV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *ApiV1alpha1Client) JobFlows(namespace string) JobTemplateInterface {
+func (c *ApiV1alpha1Client) JobTemplates(namespace string) JobTemplateInterface {
 	return newJobTemplates(c, namespace)
 }
 

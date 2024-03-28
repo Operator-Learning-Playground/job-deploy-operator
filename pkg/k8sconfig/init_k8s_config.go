@@ -12,7 +12,7 @@ import (
 func K8sRestConfig() *rest.Config {
 	// 读取配置
 	if os.Getenv("Release") == "1" {
-		klog.Info("run in the cluster")
+		klog.V(2).Info("run in the cluster")
 		return k8sRestConfigInPod()
 	}
 
@@ -22,7 +22,7 @@ func K8sRestConfig() *rest.Config {
 		klog.Fatal(err)
 	}
 	config.Insecure = true
-	klog.Info("run outside the cluster")
+	klog.V(2).Info("run outside the cluster")
 	return config
 }
 

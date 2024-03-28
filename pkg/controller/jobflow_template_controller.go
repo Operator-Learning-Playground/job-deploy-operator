@@ -43,7 +43,7 @@ func NewJobTemplateController(client client.Client, log logr.Logger,
 // Reconcile 调协 loop
 func (r *JobTemplateController) Reconcile(ctx context.Context,
 	req reconcile.Request) (reconcile.Result, error) {
-	klog.Info("start JobTemplate Reconcile..........")
+	klog.V(2).Info("start JobTemplate Reconcile..........")
 
 	// load JobTemplate by namespace
 	jobTemplate := &jobtemplatev1alpha1.JobTemplate{}
@@ -52,7 +52,7 @@ func (r *JobTemplateController) Reconcile(ctx context.Context,
 	if err != nil {
 		// If no instance is found, it will be returned directly
 		if errors.IsNotFound(err) {
-			klog.Info(fmt.Sprintf("not found JobTemplate : %v", req.Name))
+			klog.V(2).Info(fmt.Sprintf("not found JobTemplate : %v", req.Name))
 			return reconcile.Result{}, nil
 		}
 		klog.Error(err, err.Error())
@@ -67,14 +67,14 @@ func (r *JobTemplateController) Reconcile(ctx context.Context,
 		r.event.Eventf(jobTemplate, v1.EventTypeWarning, "Failed", err.Error())
 		return reconcile.Result{}, err
 	}
-	klog.Info("end jobTemplate Reconcile........")
+	klog.V(2).Info("end jobTemplate Reconcile........")
 
 	return reconcile.Result{}, nil
 }
 
 // update status
 func (r *JobTemplateController) updateJobTemplateStatus(ctx context.Context, jobTemplate *jobtemplatev1alpha1.JobTemplate) error {
-	klog.Info(fmt.Sprintf("start to update JobTemplate status! JobTemplateName: %v, "+
+	klog.V(2).Info(fmt.Sprintf("start to update JobTemplate status! JobTemplateName: %v, "+
 		"JobTemplateNamespace: %v ", jobTemplate.Name, jobTemplate.Namespace))
 	// 获取 job 列表
 	allJobList := new(batchv1.JobList)
