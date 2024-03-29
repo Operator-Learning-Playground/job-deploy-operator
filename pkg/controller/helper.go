@@ -184,6 +184,31 @@ func (r *JobFlowController) prepareJob(jobFlow *jobflowv1alpha1.JobFlow, flow *j
 		job.Spec = flow.JobTemplate
 	}
 
+	// jobflow 处理共享挂载卷
+	// 如果不为0 代表需要为每个job都共享挂载卷 Volumes
+	// 如果不为0 代表需要为每个job中的每个container都共享挂载卷 VolumeMounts
+	if len(jobFlow.Spec.ShareVolumes) != 0 && len(flow.ShareVolumeMounts) != 0 {
+		// 挂载 Volumes
+		if job.Spec.Template.Spec.Volumes != nil {
+			// 如果原本的就有，则合并
+			job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, jobFlow.Spec.ShareVolumes...)
+		} else {
+			// 如果原本提交的 spec 没有定义 volumes 则直接赋值
+			job.Spec.Template.Spec.Volumes = jobFlow.Spec.ShareVolumes
+		}
+		// 挂载 VolumeMounts
+		for i := range job.Spec.Template.Spec.Containers {
+			if job.Spec.Template.Spec.Containers[i].VolumeMounts != nil {
+				// 如果原本的就有，则合并
+				job.Spec.Template.Spec.Containers[i].VolumeMounts =
+					append(job.Spec.Template.Spec.Containers[i].VolumeMounts, flow.ShareVolumeMounts...)
+			} else {
+				// 如果原本提交的 spec 没有定义 VolumeMounts 则直接赋值
+				job.Spec.Template.Spec.Containers[i].VolumeMounts = flow.ShareVolumeMounts
+			}
+		}
+	}
+
 	// 强制设置 job 不重启与重试次数
 	job.Spec.Template.Spec.RestartPolicy = v1.RestartPolicyNever
 	var cc int32

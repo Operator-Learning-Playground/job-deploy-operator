@@ -25,6 +25,8 @@ type JobFlowSpec struct {
 	GlobalParams GlobalParams `json:"globalParams"`
 	// Flows 多个 flow 步骤流程
 	Flows []Flow `json:"flows"`
+	// ShareVolumes 多个 flow 共享数据卷
+	ShareVolumes []corev1.Volume `json:"shareVolumes"`
 	// TODO: ErrorHandler 错误处理逻辑
 	ErrorHandler ErrorHandler
 }
@@ -66,6 +68,8 @@ type Flow struct {
 	// Dependencies 依赖项，其中可以填写多个 依赖的 job name
 	// ex: 如果 job3 依赖 job1 and job2, 就在列表中放入 ["job1", "job2"]
 	Dependencies []string `json:"dependencies"`
+	// ShareVolumeMounts 单个 job 共享数据卷的挂载目录
+	ShareVolumeMounts []corev1.VolumeMount `json:"shareVolumeMounts"`
 }
 
 type JobFlowStatus struct {

@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mylocalpv
+spec:
+  capacity:
+    storage: 2Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: my-local-storage  # 和 StorageClass 一致
+  local:
+    path: /data                       # 如果使用 kind 部署，这个目录是 docker 中的映设目录
+  # 节点亲和性
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        # 指定集群中的节点
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - minikube
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: my-local-storage
+provisioner: kubernetes.io/no-provisioner
+# 延迟绑定
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: mylocalpvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: my-local-storage

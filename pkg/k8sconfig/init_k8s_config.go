@@ -8,8 +8,8 @@ import (
 	"os"
 )
 
-// K8sRestConfig 集群外部使用
-func K8sRestConfig() *rest.Config {
+// K8sRestConfigOrDie 集群外部使用
+func K8sRestConfigOrDie() *rest.Config {
 	// 读取配置
 	if os.Getenv("Release") == "1" {
 		klog.V(2).Info("run in the cluster")
