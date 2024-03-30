@@ -30,6 +30,7 @@ spec:
   flows:
     - name: job1
       dependencies: []
+      # 共享数据卷挂载
       shareVolumeMounts:
         - mountPath: /data
           name: mypvc
@@ -45,6 +46,7 @@ spec:
                 imagePullPolicy: IfNotPresent
                 name: nginx
     - name: job2
+      # 共享数据卷挂载
       shareVolumeMounts:
         - mountPath: /data
           name: mypvc
@@ -105,6 +107,7 @@ spec:
                   - sleep 10s
                 imagePullPolicy: IfNotPresent
                 name: nginx
+  # 全局共享数据卷
   shareVolumes:
     - name: mypvc
       persistentVolumeClaim:

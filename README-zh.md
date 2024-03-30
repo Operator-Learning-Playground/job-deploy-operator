@@ -7,6 +7,13 @@
 功能：k8s 当中原生的 Job 资源对象执行时，并没有相互依赖的编排特性(ex: Job a 完成后 -> 再执行Job b ...)。
 在此需求上，基于 k8s 的扩展功能，实现 JobFlow 的自定义资源控制器，实现一个能执行多 Job 树状引擎的 operator 应用。
 
+### 功能特性
+- 支持 Job 之间的依赖关系
+- 支持 Job 之间的全局参数传递(label,annotation,env)
+- 支持 Job 之间的调度到同一节点
+- 支持 Job 之间的共享数据卷 (./yaml/jobflow/example-shareVolume.yaml)
+- 支持 Job 引用 JobTemplate 对象
+
 
 ![](./image/jobflow.png?raw=true)
 
@@ -16,6 +23,8 @@
     - dependencies: 定义依赖项，如果有多个依赖可以填写多个
     - jobTemplate: job 模版，支持 k8s 原生 job spec 全部字段
     - jobTemplateRef: job 模版实例，支持 k8s 原生 job spec 全部字段, 需要填入 JobTemplate 名
+    - shareVolumes: job 共享数据卷
+    - shareVolumeMounts: job 共享数据卷挂载点
 ```yaml
 apiVersion: api.practice.com/v1alpha1
 kind: JobFlow
