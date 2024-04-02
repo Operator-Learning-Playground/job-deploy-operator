@@ -150,7 +150,8 @@ func (r *JobFlowController) findJobTemplateByNameNamespace(name, namespace strin
 	return jobTemplate.Spec.JobTemplate, nil
 }
 
-func (r *JobFlowController) prepareJob(jobFlow *jobflowv1alpha1.JobFlow, flow *jobflowv1alpha1.Flow, jobName string) (*batchv1.Job, error) {
+func (r *JobFlowController) prepareJob(jobFlow *jobflowv1alpha1.JobFlow,
+	flow *jobflowv1alpha1.Flow, jobName string) (*batchv1.Job, error) {
 	// job 对象
 	job := &batchv1.Job{}
 

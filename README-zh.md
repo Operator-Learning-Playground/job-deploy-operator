@@ -10,9 +10,9 @@
 ### 功能特性
 - 支持 Job 之间的依赖关系
 - 支持 Job 之间的全局参数传递(label,annotation,env)
-- 支持 Job 之间的调度到同一节点
-- 支持 Job 之间的共享数据卷 (./yaml/jobflow/example-shareVolume.yaml)
-- 支持 Job 引用 JobTemplate 对象
+- 支持 Job 之间的调度到同一节点 [example](./yaml/jobflow/example-sameNode.yaml)
+- 支持 Job 之间的共享数据卷 [example](./yaml/jobflow/example-shareVolume.yaml)
+- 支持 Job 引用 JobTemplate 对象 [example](./yaml/jobflow/example-jobTemplate.yaml)
 
 
 ![](./image/jobflow.png?raw=true)

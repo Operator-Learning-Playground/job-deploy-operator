@@ -4,8 +4,12 @@
 Design Background: This project aims to implement a simple Job orchestration operator.
 
 ### JobFlow
-Functionality: Native Job resources in Kubernetes do not have native orchestration features with dependencies (e.g., Job a completes -> execute Job b...). To address this requirement, a custom resource controller called JobFlow is implemented based on Kubernetes' extension capabilities. It enables the execution of multiple Job trees in an operator application.
-
+Feature: Native Job resources in Kubernetes do not have native orchestration features with dependencies (e.g., Job a completes -> execute Job b...). To address this requirement, a custom resource controller called JobFlow is implemented based on Kubernetes' extension capabilities. It enables the execution of multiple Job trees in an operator application.
+- Support dependencies between jobs
+- Support global parameter passing between jobs(label,annotation,env)
+- Supports scheduling between jobs to the same node [example](./yaml/jobflow/example-sameNode.yaml)
+- Support shared data volumes between jobs [example](./yaml/jobflow/example-shareVolume.yaml)
+- Supports Job references to JobTemplate objects [example](./yaml/jobflow/example-jobTemplate.yaml)
 
 ![](./image/jobflow.png?raw=true)
 
@@ -14,6 +18,9 @@ Functionality: Native Job resources in Kubernetes do not have native orchestrati
     - name: flow name, multiple flow names cannot be repeated
     - dependencies: Define dependencies. If there are multiple dependencies, we can fill in multiple
     - jobTemplate: Job template that supports Kubernetes native job spec fields.
+    - jobTemplateRef: Job template instance, supports all fields of k8s native job spec, needs to fill in the JobTemplate name
+    - shareVolumes: job shared data volume
+    - shareVolumeMounts: job shared data volume mount
 ```yaml
 apiVersion: api.practice.com/v1alpha1
 kind: JobFlow
